@@ -74,6 +74,54 @@ namespace CreditRiskSystem.Server.Controllers
         }
 
         // POST: api/FinancialData
+        [HttpPost]
+        public async Task<ActionResult<RiskAssessmentResult>> PostFinancialData(FinancialData financialData)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Рассчитываем Altman Z-score
+            double x1 = financialData.WorkingCapital / financialData.TotalAssets;
+            double x2 = financialData.RetainedEarnings / financialData.TotalAssets;
+            double x3 = financialData.EBIT / financialData.TotalAssets;
+            double x4 = financialData.MarketValueOfEquity / financialData.TotalLiabilities;
+            double x5 = financialData.Revenue / financialData.TotalAssets;
+
+            double zScore = 1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 1.0 * x5;
+
+            // Определяем уровень риска
+            string riskLevel = zScore switch
+            {
+                > 2.99 => "Низкий",
+                >= 1.81 => "Средний",
+                _ => "Высокий"
+            };
+
+            // Создаем результат оценки риска
+            var result = new RiskAssessmentResult
+            {
+                Id = Guid.NewGuid(),
+                FinancialDataId = financialData.Id,
+                AltmanZScore = zScore,
+                RiskLevel = riskLevel,
+                Recommendations = $"Уровень риска: {riskLevel}. Рекомендуется {(riskLevel == "Высокий" ? "пересмотреть финансовую стратегию" : "продолжать текущую стратегию")}.",
+                CalculatedAt = DateTime.UtcNow,
+                FinancialData = financialData
+            };
+
+            // Сохраняем данные
+            financialData.Id = Guid.NewGuid();
+            financialData.CreatedAt = DateTime.UtcNow;
+            _context.FinancialData.Add(financialData);
+            _context.RiskAssessmentResults.Add(result);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetFinancialData), new { id = financialData.Id }, result);
+        }
+
+        /*// POST: api/FinancialData
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<FinancialData>> PostFinancialData(FinancialData financialData)
@@ -82,7 +130,7 @@ namespace CreditRiskSystem.Server.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetFinancialData", new { id = financialData.Id }, financialData);
-        }
+        }*/
 
         // DELETE: api/FinancialData/5
         [HttpDelete("{id}")]
