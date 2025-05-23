@@ -19,7 +19,7 @@ namespace CreditRiskSystem.Client
             var services = new ServiceCollection();
             services.AddHttpClient<MainWindowViewModel>(client =>
             {
-                client.BaseAddress = new Uri("https://localhost:5001"); // ”кажи порт твоего сервера
+                client.BaseAddress = new Uri("https://localhost:7148"); // »справленный порт
             });
 
             services.AddSingleton<MainWindowViewModel>();
