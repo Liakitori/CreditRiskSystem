@@ -3,18 +3,28 @@
         xmlns:vm="using:CreditRiskSystem.Client.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
         x:Class="CreditRiskSystem.Client.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="CreditRiskSystem.Client">
-
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
-
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+	<StackPanel Margin="20" Spacing="10">
+		<TextBlock Text="Оборотный капитал:"/>
+		<TextBox Text="{Binding WorkingCapital, StringFormat=F2}"/>
+		<TextBlock Text="Общие активы:"/>
+		<TextBox Text="{Binding TotalAssets, StringFormat=F2}"/>
+		<TextBlock Text="Нераспределенная прибыль:"/>
+		<TextBox Text="{Binding RetainedEarnings, StringFormat=F2}"/>
+		<TextBlock Text="EBIT:"/>
+		<TextBox Text="{Binding EBIT, StringFormat=F2}"/>
+		<TextBlock Text="Рыночная стоимость капитала:"/>
+		<TextBox Text="{Binding MarketValueOfEquity, StringFormat=F2}"/>
+		<TextBlock Text="Общие обязательства:"/>
+		<TextBox Text="{Binding TotalLiabilities, StringFormat=F2}"/>
+		<TextBlock Text="Выручка:"/>
+		<TextBox Text="{Binding Revenue, StringFormat=F2}"/>
+		<Button Content="Рассчитать риск" Command="{Binding AssessRiskCommand}" Margin="0,10"/>
+		<TextBlock Text="{Binding Result}" TextWrapping="Wrap" MinHeight="100"/>
+	</StackPanel>
 
 </Window>
