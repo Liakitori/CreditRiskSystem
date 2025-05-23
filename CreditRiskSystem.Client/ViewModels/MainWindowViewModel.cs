@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reactive;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace CreditRiskSystem.Client.ViewModels
 {
@@ -26,6 +27,7 @@ namespace CreditRiskSystem.Client.ViewModels
         public MainWindowViewModel(HttpClient httpClient)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            //Debug.WriteLine($"MainWindowViewModel initialized with BaseAddress: {_httpClient.BaseAddress}"); // Диагностика
 
             // Настраиваем команду для расчета риска
             AssessRiskCommand = ReactiveCommand.CreateFromTask(AssessRiskAsync);
@@ -35,6 +37,7 @@ namespace CreditRiskSystem.Client.ViewModels
         {
             try
             {
+                //Debug.WriteLine($"Sending request to: {_httpClient.BaseAddress?.ToString() ?? "null"}api/FinancialData"); // Диагностика
                 var data = new FinancialData
                 {
                     WorkingCapital = WorkingCapital,
@@ -53,15 +56,18 @@ namespace CreditRiskSystem.Client.ViewModels
                     Result = $"Altman Z-score: {result.AltmanZScore:F2}\n" +
                              $"Уровень риска: {result.RiskLevel}\n" +
                              $"Рекомендации: {result.Recommendations}";
+                    //Debug.WriteLine($"Request successful: {Result}"); // Диагностика
                 }
                 else
                 {
                     Result = $"Ошибка: {response.ReasonPhrase}";
+                    //Debug.WriteLine($"Request failed: {response.ReasonPhrase}"); // Диагностика
                 }
             }
             catch (Exception ex)
             {
                 Result = $"Ошибка: {ex.Message}";
+                //Debug.WriteLine($"Exception: {ex}"); // Диагностика
             }
         }
 
