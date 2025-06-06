@@ -1,75 +1,71 @@
-﻿using CreditRiskSystem.Common.Models;
+﻿using Avalonia.Controls;
+using CreditRiskSystem.Common.Models;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reactive;
 using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace CreditRiskSystem.Client.ViewModels
 {
-    public class MainWindowViewModel : ViewModelBase
+    public class MainWindowViewModel : ReactiveObject
     {
         private readonly HttpClient _httpClient;
+        private readonly Window _parentWindow;
 
-        [Reactive] public double WorkingCapital { get; set; }
-        [Reactive] public double TotalAssets { get; set; }
-        [Reactive] public double RetainedEarnings { get; set; }
-        [Reactive] public double EBIT { get; set; }
-        [Reactive] public double MarketValueOfEquity { get; set; }
-        [Reactive] public double TotalLiabilities { get; set; }
-        [Reactive] public double Revenue { get; set; }
         [Reactive] public string Result { get; set; }
 
-        public ReactiveCommand<Unit, Unit> AssessRiskCommand { get; }
-        public MainWindowViewModel(HttpClient httpClient)
+        public ReactiveCommand<Unit, Unit> UploadFileCommand { get; }
+
+        public MainWindowViewModel(HttpClient httpClient, Window parentWindow)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            //Debug.WriteLine($"MainWindowViewModel initialized with BaseAddress: {_httpClient.BaseAddress}"); // Диагностика
-
-            // Настраиваем команду для расчета риска
-            AssessRiskCommand = ReactiveCommand.CreateFromTask(AssessRiskAsync);
+            _parentWindow = parentWindow ?? throw new ArgumentNullException(nameof(parentWindow));
+            UploadFileCommand = ReactiveCommand.CreateFromTask(UploadFileAsync);
         }
 
-        private async Task AssessRiskAsync()
+        private async Task UploadFileAsync()
         {
-            try
+            var dialog = new OpenFileDialog
             {
-                //Debug.WriteLine($"Sending request to: {_httpClient.BaseAddress?.ToString() ?? "null"}api/FinancialData"); // Диагностика
-                var data = new FinancialData
-                {
-                    WorkingCapital = WorkingCapital,
-                    TotalAssets = TotalAssets,
-                    RetainedEarnings = RetainedEarnings,
-                    EBIT = EBIT,
-                    MarketValueOfEquity = MarketValueOfEquity,
-                    TotalLiabilities = TotalLiabilities,
-                    Revenue = Revenue
-                };
+                Title = "Выберите файл Excel",
+                Filters = { new FileDialogFilter { Name = "Excel", Extensions = { "xlsx" } } }
+            };
 
-                var response = await _httpClient.PostAsJsonAsync("api/FinancialData", data);
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = await response.Content.ReadFromJsonAsync<RiskAssessmentResult>();
-                    Result = $"Altman Z-score: {result.AltmanZScore:F2}\n" +
-                             $"Уровень риска: {result.RiskLevel}\n" +
-                             $"Рекомендации: {result.Recommendations}";
-                    //Debug.WriteLine($"Request successful: {Result}"); // Диагностика
-                }
-                else
-                {
-                    Result = $"Ошибка: {response.ReasonPhrase}";
-                    //Debug.WriteLine($"Request failed: {response.ReasonPhrase}"); // Диагностика
-                }
-            }
-            catch (Exception ex)
+            var result = await dialog.ShowAsync(_parentWindow);
+            if (result != null && result.Length > 0)
             {
-                Result = $"Ошибка: {ex.Message}";
-                //Debug.WriteLine($"Exception: {ex}"); // Диагностика
+                try
+                {
+                    var filePath = result[0];
+                    using var stream = File.OpenRead(filePath);
+                    var content = new MultipartFormDataContent();
+                    content.Add(new StreamContent(stream), "file", Path.GetFileName(filePath));
+
+                    var response = await _httpClient.PostAsync("api/FinancialData/upload", content);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var riskResult = await response.Content.ReadFromJsonAsync<RiskAssessmentResult>();
+                        Result = $"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})\n" +
+                                 $"Springate: {riskResult.SpringateScore:F2} ({riskResult.SpringateRiskLevel})\n" +
+                                 $"Fulmer: {riskResult.FulmerScore:F2} ({riskResult.FulmerRiskLevel})\n" +
+                                 $"Ohlson O-score: {riskResult.OhlsonOScore:F2} (Вероятность: {riskResult.OhlsonProbability:F2})\n" +
+                                 $"Zmijewski: {riskResult.ZmijewskiScore:F2} (Вероятность: {riskResult.ZmijewskiProbability:F2})\n" +
+                                 $"Общая оценка кредитного риска: {riskResult.OverallRiskAssessment}";
+                    }
+                    else
+                    {
+                        Result = $"Ошибка: {response.ReasonPhrase}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Result = $"Ошибка: {ex.Message}";
+                }
             }
         }
-
     }
 }

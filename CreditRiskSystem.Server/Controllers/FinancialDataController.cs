@@ -1,156 +1,157 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using ClosedXML.Excel;
 using CreditRiskSystem.Common.Models;
 using CreditRiskSystem.Server.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace CreditRiskSystem.Server.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class FinancialDataController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class FinancialDataController : ControllerBase
+    private readonly ApplicationDbContext _context;
+
+    public FinancialDataController(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+    }
 
-        public FinancialDataController(ApplicationDbContext context)
+    [HttpPost("upload")]
+    public async Task<ActionResult<RiskAssessmentResult>> UploadFile(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
         {
-            _context = context;
+            return BadRequest("Файл не загружен.");
         }
 
-        // GET: api/FinancialData
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<FinancialData>>> GetFinancialData()
+        using var stream = file.OpenReadStream();
+        using var workbook = new XLWorkbook(stream);
+
+        // Извлечение данных из файла
+        var financialData = ExtractFinancialData(workbook);
+
+        // Расчет кредитного риска
+        var result = CalculateRiskAssessment(financialData);
+
+        // Сохранение данных
+        financialData.Id = Guid.NewGuid();
+        financialData.CreatedAt = DateTime.UtcNow;
+        result.Id = Guid.NewGuid();
+        result.FinancialDataId = financialData.Id;
+        result.CalculatedAt = DateTime.UtcNow;
+        result.FinancialData = financialData;
+
+        _context.FinancialData.Add(financialData);
+        _context.RiskAssessmentResults.Add(result);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetFinancialData), new { id = financialData.Id }, result);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<FinancialData>> GetFinancialData(Guid id)
+    {
+        var financialData = await _context.FinancialData.FindAsync(id);
+        if (financialData == null)
         {
-            return await _context.FinancialData.ToListAsync();
+            return NotFound();
         }
+        return financialData;
+    }
 
-        // GET: api/FinancialData/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<FinancialData>> GetFinancialData(Guid id)
+    private FinancialData ExtractFinancialData(XLWorkbook workbook)
+    {
+        var financialData = new FinancialData();
+
+        // Бухгалтерский баланс
+        var balanceSheet = workbook.Worksheet("Бухгалтерский баланс");
+        financialData.Код1200 = GetValueFromCell(balanceSheet, "1200");
+        financialData.Код1300 = GetValueFromCell(balanceSheet, "1300");
+        financialData.Код1370 = GetValueFromCell(balanceSheet, "1370");
+        financialData.Код1400 = GetValueFromCell(balanceSheet, "1400");
+        financialData.Код1500 = GetValueFromCell(balanceSheet, "1500");
+        financialData.Код1600 = GetValueFromCell(balanceSheet, "1600");
+
+        // Отчет о финансовых результатах
+        var incomeStatement = workbook.Worksheet("Отчет о финансовых результатах");
+        financialData.Код2110 = GetValueFromCell(incomeStatement, "2110");
+        financialData.Код2300 = GetValueFromCell(incomeStatement, "2300");
+        financialData.Код2330 = GetValueFromCell(incomeStatement, "2330");
+        financialData.Код2400 = GetValueFromCell(incomeStatement, "2400");
+
+        return financialData;
+    }
+
+    private double GetValueFromCell(IXLWorksheet worksheet, string code)
+    {
+        var cell = worksheet.CellsUsed().FirstOrDefault(c => c.Value.ToString() == code);
+        if (cell != null)
         {
-            var financialData = await _context.FinancialData.FindAsync(id);
-
-            if (financialData == null)
-            {
-                return NotFound();
-            }
-
-            return financialData;
+            var valueCell = cell.WorksheetRow().Cell(cell.WorksheetColumn().ColumnNumber() + 1);
+            return double.TryParse(valueCell.Value.ToString(), out double value) ? value : 0;
         }
+        return 0;
+    }
 
-        // PUT: api/FinancialData/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutFinancialData(Guid id, FinancialData financialData)
-        {
-            if (id != financialData.Id)
-            {
-                return BadRequest();
-            }
+    private RiskAssessmentResult CalculateRiskAssessment(FinancialData data)
+    {
+        var result = new RiskAssessmentResult();
 
-            _context.Entry(financialData).State = EntityState.Modified;
+        // Altman Z-score
+        double x1 = (data.Код1200 - data.Код1500) / data.Код1600;
+        double x2 = data.Код1370 / data.Код1600;
+        double x3 = data.Код2300 / data.Код1600;
+        double x4 = data.Код1300 / (data.Код1400 + data.Код1500);
+        double x5 = data.Код2110 / data.Код1600;
+        result.AltmanZScore = 0.717 * x1 + 0.847 * x2 + 3.107 * x3 + 0.420 * x4 + 0.998 * x5;
+        result.AltmanRiskLevel = result.AltmanZScore > 2.9 ? "Низкий" : (result.AltmanZScore > 1.23 ? "Средний" : "Высокий");
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!FinancialDataExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+        // Springate
+        double a = (data.Код1200 - data.Код1500) / data.Код1600;
+        double b = data.Код2300 / data.Код1600;
+        double c = data.Код2300 / data.Код1500;
+        double d = data.Код2110 / data.Код1600;
+        result.SpringateScore = 1.03 * a + 3.07 * b + 0.66 * c + 0.4 * d;
+        result.SpringateRiskLevel = result.SpringateScore > 0.862 ? "Низкий" : "Высокий";
 
-            return NoContent();
-        }
+        // Fulmer
+        double v1 = data.Код1370 / data.Код1600;
+        double v2 = data.Код2110 / data.Код1600;
+        double v3 = data.Код2300 / data.Код1300;
+        double v4 = data.Код2400 / (data.Код1400 + data.Код1500);
+        double v5 = (data.Код1400 + data.Код1500) / data.Код1600;
+        double v6 = data.Код1500 / data.Код1600;
+        double v7 = Math.Log(data.Код1600);
+        double v8 = (data.Код1200 - data.Код1500) / (data.Код1400 + data.Код1500);
+        double v9 = data.Код2330 > 0 ? Math.Log(data.Код2300 / data.Код2330) : 0;
+        result.FulmerScore = 5.528 * v1 + 0.212 * v2 + 0.073 * v3 + 1.270 * v4 - 0.120 * v5 + 2.335 * v6 + 0.575 * v7 + 1.083 * v8 + 0.894 * v9 - 6.075;
+        result.FulmerRiskLevel = result.FulmerScore > 0 ? "Низкий" : "Высокий";
 
-        // POST: api/FinancialData
-        [HttpPost]
-        public async Task<ActionResult<RiskAssessmentResult>> PostFinancialData(FinancialData financialData)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+        // Ohlson O-score
+        double o = -1.32 - 0.407 * Math.Log(data.Код1600) + 6.03 * ((data.Код1400 + data.Код1500) / data.Код1600)
+            - 1.43 * ((data.Код1200 - data.Код1500) / data.Код1600) + 0.076 * (data.Код1500 / data.Код1200)
+            - 1.72 * ((data.Код1400 + data.Код1500) > data.Код1600 ? 1 : 0) - 2.37 * (data.Код2400 / data.Код1600)
+            - 1.83 * (data.Код2300 / (data.Код1400 + data.Код1500)) + 0.285 * (data.Код2400 < 0 ? 1 : 0) - 0.521 * 0; // CHIN не учитываем без прошлогодних данных
+        result.OhlsonOScore = o;
+        result.OhlsonProbability = 1 / (1 + Math.Exp(-o));
 
-            // Рассчитываем Altman Z-score
-            double x1 = financialData.WorkingCapital / financialData.TotalAssets;
-            double x2 = financialData.RetainedEarnings / financialData.TotalAssets;
-            double x3 = financialData.EBIT / financialData.TotalAssets;
-            double x4 = financialData.MarketValueOfEquity / financialData.TotalLiabilities;
-            double x5 = financialData.Revenue / financialData.TotalAssets;
+        // Zmijewski
+        double x = -4.3 - 4.5 * (data.Код2400 / data.Код1600) + 5.7 * ((data.Код1400 + data.Код1500) / data.Код1600) - 0.004 * (data.Код1200 / data.Код1500);
+        result.ZmijewskiScore = x;
+        result.ZmijewskiProbability = 1 / (1 + Math.Exp(-x));
 
-            double zScore = 1.2 * x1 + 1.4 * x2 + 3.3 * x3 + 0.6 * x4 + 1.0 * x5;
+        // Общая оценка кредитного риска
+        int highRiskCount = 0;
+        if (result.AltmanRiskLevel == "Высокий") highRiskCount++;
+        if (result.SpringateRiskLevel == "Высокий") highRiskCount++;
+        if (result.FulmerRiskLevel == "Высокий") highRiskCount++;
+        if (result.OhlsonProbability > 0.5) highRiskCount++;
+        if (result.ZmijewskiProbability > 0.5) highRiskCount++;
+        result.OverallRiskAssessment = highRiskCount >= 3 ? "Высокий" : (highRiskCount >= 1 ? "Средний" : "Низкий");
 
-            // Определяем уровень риска
-            string riskLevel = zScore switch
-            {
-                > 2.99 => "Низкий",
-                >= 1.81 => "Средний",
-                _ => "Высокий"
-            };
-
-            // Создаем результат оценки риска
-            var result = new RiskAssessmentResult
-            {
-                Id = Guid.NewGuid(),
-                FinancialDataId = financialData.Id,
-                AltmanZScore = zScore,
-                RiskLevel = riskLevel,
-                Recommendations = $"Уровень риска: {riskLevel}. Рекомендуется {(riskLevel == "Высокий" ? "пересмотреть финансовую стратегию" : "продолжать текущую стратегию")}.",
-                CalculatedAt = DateTime.UtcNow,
-                FinancialData = financialData
-            };
-
-            // Сохраняем данные
-            financialData.Id = Guid.NewGuid();
-            financialData.CreatedAt = DateTime.UtcNow;
-            _context.FinancialData.Add(financialData);
-            _context.RiskAssessmentResults.Add(result);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetFinancialData), new { id = financialData.Id }, result);
-        }
-
-        /*// POST: api/FinancialData
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<FinancialData>> PostFinancialData(FinancialData financialData)
-        {
-            _context.FinancialData.Add(financialData);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetFinancialData", new { id = financialData.Id }, financialData);
-        }*/
-
-        // DELETE: api/FinancialData/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFinancialData(Guid id)
-        {
-            var financialData = await _context.FinancialData.FindAsync(id);
-            if (financialData == null)
-            {
-                return NotFound();
-            }
-
-            _context.FinancialData.Remove(financialData);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool FinancialDataExists(Guid id)
-        {
-            return _context.FinancialData.Any(e => e.Id == id);
-        }
+        return result;
     }
 }

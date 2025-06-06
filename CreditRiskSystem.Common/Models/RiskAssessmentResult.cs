@@ -10,12 +10,20 @@ namespace CreditRiskSystem.Common.Models
     public class RiskAssessmentResult
     {
         [Key]
-        public Guid Id { get; set; } // Первичный ключ
-        public Guid FinancialDataId { get; set; } // Внешний ключ для связи с FinancialData
+        public Guid Id { get; set; }
+        public Guid FinancialDataId { get; set; }
         public double AltmanZScore { get; set; }
-        public string RiskLevel { get; set; } // Низкий, Средний, Высокий
-        public string Recommendations { get; set; }
+        public string AltmanRiskLevel { get; set; }
+        public double SpringateScore { get; set; }
+        public string SpringateRiskLevel { get; set; }
+        public double FulmerScore { get; set; }
+        public string FulmerRiskLevel { get; set; }
+        public double OhlsonOScore { get; set; }
+        public double OhlsonProbability { get; set; }
+        public double ZmijewskiScore { get; set; }
+        public double ZmijewskiProbability { get; set; }
+        public string OverallRiskAssessment { get; set; }
         public DateTime CalculatedAt { get; set; }
-        public FinancialData FinancialData { get; set; } // Навигационное свойство
+        public FinancialData FinancialData { get; set; }
     }
 }
