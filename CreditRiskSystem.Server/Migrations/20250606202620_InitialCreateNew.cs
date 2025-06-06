@@ -16,13 +16,16 @@ namespace CreditRiskSystem.Server.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    WorkingCapital = table.Column<double>(type: "double precision", nullable: false),
-                    TotalAssets = table.Column<double>(type: "double precision", nullable: false),
-                    RetainedEarnings = table.Column<double>(type: "double precision", nullable: false),
-                    EBIT = table.Column<double>(type: "double precision", nullable: false),
-                    MarketValueOfEquity = table.Column<double>(type: "double precision", nullable: false),
-                    TotalLiabilities = table.Column<double>(type: "double precision", nullable: false),
-                    Revenue = table.Column<double>(type: "double precision", nullable: false),
+                    Код1200 = table.Column<double>(type: "double precision", nullable: false),
+                    Код1300 = table.Column<double>(type: "double precision", nullable: false),
+                    Код1370 = table.Column<double>(type: "double precision", nullable: false),
+                    Код1400 = table.Column<double>(type: "double precision", nullable: false),
+                    Код1500 = table.Column<double>(type: "double precision", nullable: false),
+                    Код1600 = table.Column<double>(type: "double precision", nullable: false),
+                    Код2110 = table.Column<double>(type: "double precision", nullable: false),
+                    Код2300 = table.Column<double>(type: "double precision", nullable: false),
+                    Код2330 = table.Column<double>(type: "double precision", nullable: false),
+                    Код2400 = table.Column<double>(type: "double precision", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -37,8 +40,16 @@ namespace CreditRiskSystem.Server.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FinancialDataId = table.Column<Guid>(type: "uuid", nullable: false),
                     AltmanZScore = table.Column<double>(type: "double precision", nullable: false),
-                    RiskLevel = table.Column<string>(type: "text", nullable: false),
-                    Recommendations = table.Column<string>(type: "text", nullable: false),
+                    AltmanRiskLevel = table.Column<string>(type: "text", nullable: false),
+                    SpringateScore = table.Column<double>(type: "double precision", nullable: false),
+                    SpringateRiskLevel = table.Column<string>(type: "text", nullable: false),
+                    FulmerScore = table.Column<double>(type: "double precision", nullable: false),
+                    FulmerRiskLevel = table.Column<string>(type: "text", nullable: false),
+                    OhlsonOScore = table.Column<double>(type: "double precision", nullable: false),
+                    OhlsonProbability = table.Column<double>(type: "double precision", nullable: false),
+                    ZmijewskiScore = table.Column<double>(type: "double precision", nullable: false),
+                    ZmijewskiProbability = table.Column<double>(type: "double precision", nullable: false),
+                    OverallRiskAssessment = table.Column<string>(type: "text", nullable: false),
                     CalculatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>

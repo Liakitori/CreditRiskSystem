@@ -31,25 +31,34 @@ namespace CreditRiskSystem.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<double>("EBIT")
+                    b.Property<double>("Код1200")
                         .HasColumnType("double precision");
 
-                    b.Property<double>("MarketValueOfEquity")
+                    b.Property<double>("Код1300")
                         .HasColumnType("double precision");
 
-                    b.Property<double>("RetainedEarnings")
+                    b.Property<double>("Код1370")
                         .HasColumnType("double precision");
 
-                    b.Property<double>("Revenue")
+                    b.Property<double>("Код1400")
                         .HasColumnType("double precision");
 
-                    b.Property<double>("TotalAssets")
+                    b.Property<double>("Код1500")
                         .HasColumnType("double precision");
 
-                    b.Property<double>("TotalLiabilities")
+                    b.Property<double>("Код1600")
                         .HasColumnType("double precision");
 
-                    b.Property<double>("WorkingCapital")
+                    b.Property<double>("Код2110")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Код2300")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Код2330")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Код2400")
                         .HasColumnType("double precision");
 
                     b.HasKey("Id");
@@ -63,6 +72,10 @@ namespace CreditRiskSystem.Server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AltmanRiskLevel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<double>("AltmanZScore")
                         .HasColumnType("double precision");
 
@@ -72,13 +85,35 @@ namespace CreditRiskSystem.Server.Migrations
                     b.Property<Guid>("FinancialDataId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Recommendations")
+                    b.Property<string>("FulmerRiskLevel")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("RiskLevel")
+                    b.Property<double>("FulmerScore")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("OhlsonOScore")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("OhlsonProbability")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("OverallRiskAssessment")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("SpringateRiskLevel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double>("SpringateScore")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("ZmijewskiProbability")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("ZmijewskiScore")
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
