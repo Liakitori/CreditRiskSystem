@@ -12,7 +12,7 @@
         <!-- Меню "Файл" -->
         <Menu HorizontalAlignment="Left" VerticalAlignment="Top">
             <MenuItem Header="Файл">
-                <MenuItem Header="Импортировать Excel" Command="{Binding DownloadJsonCommand}"/>
+                <MenuItem Header="Импортировать Excel" Command="{Binding UploadFileCommand}"/>
                 <MenuItem Header="Экспортировать в PDF" Command="{Binding DownloadPdfCommand}"/>
                 <MenuItem Header="Экспортировать в JSON" Command="{Binding DownloadJsonCommand}"/>
             </MenuItem>
