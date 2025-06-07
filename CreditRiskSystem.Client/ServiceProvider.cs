@@ -24,13 +24,12 @@ public static class ServiceProvider
         var services = new ServiceCollection();
 
         // Регистрация Http клиента
-        services.AddHttpClient("ServerApi", client =>
+        services.AddHttpClient<IApiService, ApiService>("ServerApi", client =>
         {
             client.BaseAddress = new Uri("https://localhost:7148");
         });
 
         // Регистрация сервисов
-        services.AddSingleton<IApiService, ApiService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<IDialogService>(provider => 
