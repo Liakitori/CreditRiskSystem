@@ -24,7 +24,7 @@ namespace CreditRiskSystem.Client.ViewModels
         {
             _apiService = apiService;
             _dialogService = dialogService;
-            Calculations = new ObservableCollection<CalculationSummaryViewModel>();
+            Calculations = [];
             
             LoadCalculationsAsync();
         }
