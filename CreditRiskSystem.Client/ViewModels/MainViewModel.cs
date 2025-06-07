@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 
-namespace CreditRiskSystem.Client.ViewModels
+namespace CreditRiskSystem.Client.ViewModels;
+
+public class MainViewModel : ViewModelBase
 {
-    public class MainViewModel : ViewModelBase
+    public MainViewModel(HttpClient httpClient, Window parentWindow, MainWindowViewModel mainWindowViewModel)
     {
+        
     }
 }
+

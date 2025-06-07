@@ -14,15 +14,17 @@ namespace CreditRiskSystem.Client.ViewModels
 {
     public class MainWindowViewModel : ViewModelBase
     {
-        [Reactive] public MainViewModel mainViewModel { get; set; }
-        [Reactive] public ViewModelBase currentViewModel { get; set; }
-        [Reactive] public AuthorizationViewModel authorizationViewMode { get; set; }
-        [Reactive] public HistoryViewModel historyViewModel { get; set; }
+        [Reactive] public MainViewModel MainViewModel { get; set; }
+        [Reactive] public AuthorizationViewModel AuthorizationViewModel { get; set; }
+        [Reactive] public HistoryViewModel HistoryViewModel { get; set; }
+        [Reactive] public ViewModelBase CurrentViewModel { get; set; }
 
         public MainWindowViewModel(HttpClient httpClient, Window parentWindow)
         {
-            authorizationViewModel = new AuthorizationViewModel();
-            CurrentViewModel = this.authorizationViewModel;
+            AuthorizationViewModel = new AuthorizationViewModel(this);
+            MainViewModel = new MainViewModel(httpClient, parentWindow, this);
+            HistoryViewModel = new HistoryViewModel(this);
+            CurrentViewModel = AuthorizationViewModel;
 
         }
 
