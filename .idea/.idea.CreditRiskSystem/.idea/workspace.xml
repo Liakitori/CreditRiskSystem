@@ -43,6 +43,7 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="mock://C:/Users/m-dan/RiderProjects/creditRiskSystem/CreditRiskSystem.Client/ViewModels/MainWindowViewModel.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://C:/Users/m-dan/RiderProjects/creditRiskSystem/CreditRiskSystem.Client/ViewModels/MainWindowViewModel.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://C:/Users/m-dan/RiderProjects/creditRiskSystem/CreditRiskSystem.Client/ViewModels/MainWindowViewModel.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -173,7 +174,7 @@
       <workItem from="1749327449384" duration="6123000" />
       <workItem from="1749334628561" duration="1197000" />
       <workItem from="1749337629966" duration="50000" />
-      <workItem from="1749337693929" duration="1001000" />
+      <workItem from="1749337693929" duration="1307000" />
     </task>
     <task id="LOCAL-00001" summary="Azazazaza">
       <option name="closed" value="true" />
@@ -295,7 +296,31 @@
       <option name="project" value="LOCAL" />
       <updated>1749338697292</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="конечно">
+      <option name="closed" value="true" />
+      <created>1749338783315</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1749338783315</updated>
+    </task>
+    <task id="LOCAL-00017" summary="sosat">
+      <option name="closed" value="true" />
+      <created>1749338979590</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1749338979590</updated>
+    </task>
+    <task id="LOCAL-00018" summary="asdfghjkl;">
+      <option name="closed" value="true" />
+      <created>1749339001524</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1749339001524</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -330,7 +355,10 @@
     <MESSAGE value="Сосать х3" />
     <MESSAGE value="Сосал?" />
     <MESSAGE value="Да" />
-    <option name="LAST_COMMIT_MESSAGE" value="Да" />
+    <MESSAGE value="конечно" />
+    <MESSAGE value="sosat" />
+    <MESSAGE value="asdfghjkl;" />
+    <option name="LAST_COMMIT_MESSAGE" value="asdfghjkl;" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

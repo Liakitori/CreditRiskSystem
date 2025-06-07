@@ -27,9 +27,8 @@
 
         <!-- Основное содержимое -->
         <StackPanel Margin="20" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header" HorizontalAlignment="Center"/>
-            <Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}"/>
-            <TextBlock Text="Результаты расчета:" HorizontalAlignment="Center"/>
+            <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header" HorizontalAlignment="Left"/>
+            <Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}" HorizontalAlignment="Left"/>
             <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" HorizontalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" Spacing="20">
                 <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" VerticalAlignment="Top" Width="400"/>
