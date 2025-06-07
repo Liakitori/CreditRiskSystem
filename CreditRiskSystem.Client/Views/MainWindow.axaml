@@ -27,16 +27,16 @@
 
         <!-- Основное содержимое -->
         <StackPanel Margin="20" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header"/>
+            <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header" HorizontalAlignment="Center"/>
             <Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}"/>
-            <TextBlock Text="Результаты расчета:"/>
-            <WrapPanel Orientation="Horizontal">
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" Height="400" Width="400"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" Height="400" Width="400"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result3}" Height="400" Width="400"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result4}" Height="400" Width="400"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result5}" Height="400" Width="400"/>
-            </WrapPanel>
+            <TextBlock Text="Результаты расчета:" HorizontalAlignment="Center"/>
+            <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" HorizontalAlignment="Stretch"/>
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" VerticalAlignment="Top" Width="500"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result3}" VerticalAlignment="Top" Width="500"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result4}" VerticalAlignment="Top" Width="500"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result5}" VerticalAlignment="Top" Width="500"/>
+            </StackPanel>
         </StackPanel>
 		
         <!-- Кнопка "Выйти" -->
