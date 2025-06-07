@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace CreditRiskSystem.Client.ViewModels;
 public class HistoryViewModel : ViewModelBase
 {
-    public HistoryViewModel(MainWindowViewModel mainWindowViewModel)
+    public HistoryViewModel()
     {
         
     }

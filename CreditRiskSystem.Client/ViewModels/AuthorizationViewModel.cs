@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace CreditRiskSystem.Client.ViewModels;
 public class AuthorizationViewModel : ViewModelBase
 {
-    public AuthorizationViewModel(MainWindowViewModel mainWindowViewModel)
+    public AuthorizationViewModel()
     {
         
     }
