@@ -1,9 +1,13 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PdfSharpCore.Drawing;
+using PdfSharpCore.Pdf;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CreditRiskSystem.Common.Models;
 using CreditRiskSystem.Server.Data;
@@ -62,6 +66,77 @@ namespace CreditRiskSystem.Server.Controllers
                 return NotFound();
             }
             return financialData;
+        }
+
+        /// <summary>
+        /// Эндпоинт для скачивания результата в формате PDF.
+        /// Возвращается последний результат оценки, отсортированный по дате расчёта.
+        /// </summary>
+        [HttpGet("download/pdf")]
+        public async Task<IActionResult> DownloadPdf()
+        {
+            var result = await _context.RiskAssessmentResults
+                .OrderByDescending(r => r.CalculatedAt)
+                .FirstOrDefaultAsync();
+
+            if (result == null)
+            {
+                return NotFound("Результат оценки не найден.");
+            }
+
+            // Генерация PDF
+            PdfDocument document = new PdfDocument();
+            document.Info.Title = "Результат оценки кредитного риска";
+            PdfPage page = document.AddPage();
+            XGraphics gfx = XGraphics.FromPdfPage(page);
+            XFont font = new XFont("Verdana", 12, XFontStyle.Regular);
+            double yPoint = 40;
+
+            gfx.DrawString("=== Результаты оценки кредитного риска ===", font, XBrushes.Black,
+                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+            yPoint += 30;
+            gfx.DrawString($"Altman Z-score: {result.AltmanZScore:F2} ({result.AltmanRiskLevel})", font, XBrushes.Black,
+                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Springate: {result.SpringateScore:F2} ({result.SpringateRiskLevel})", font, XBrushes.Black,
+                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Fulmer: {result.FulmerScore:F2} ({result.FulmerRiskLevel})", font, XBrushes.Black,
+                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Ohlson O-score: {result.OhlsonOScore:F2} (Вероятность: {result.OhlsonProbability:F2})", font, XBrushes.Black,
+                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Zmijewski: {result.ZmijewskiScore:F2} (Вероятность: {result.ZmijewskiProbability:F2})", font, XBrushes.Black,
+                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Общая оценка кредитного риска: {result.OverallRiskAssessment}", font, XBrushes.Black,
+                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+
+            using MemoryStream stream = new MemoryStream();
+            document.Save(stream, false);
+            return File(stream.ToArray(), "application/pdf", "result.pdf");
+        }
+
+        /// <summary>
+        /// Эндпоинт для скачивания результата в формате JSON.
+        /// Возвращается последний результат оценки, отсортированный по дате расчёта.
+        /// </summary>
+        [HttpGet("download/json")]
+        public async Task<IActionResult> DownloadJson()
+        {
+            var result = await _context.RiskAssessmentResults
+                .OrderByDescending(r => r.CalculatedAt)
+                .FirstOrDefaultAsync();
+
+            if (result == null)
+            {
+                return NotFound("Результат оценки не найден.");
+            }
+
+            var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+            var jsonBytes = Encoding.UTF8.GetBytes(json);
+            return File(jsonBytes, "application/json", "result.json");
         }
 
         private FinancialData ExtractFinancialData(XLWorkbook workbook)

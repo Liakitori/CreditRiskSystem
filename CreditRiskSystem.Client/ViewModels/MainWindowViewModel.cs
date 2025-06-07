@@ -20,12 +20,16 @@ namespace CreditRiskSystem.Client.ViewModels
         [Reactive] public string Result { get; set; }
 
         public ReactiveCommand<Unit, Unit> UploadFileCommand { get; }
+        public ReactiveCommand<Unit, Unit> DownloadPdfCommand { get; }
+        public ReactiveCommand<Unit, Unit> DownloadJsonCommand { get; }
 
         public MainWindowViewModel(HttpClient httpClient, Window parentWindow)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _parentWindow = parentWindow ?? throw new ArgumentNullException(nameof(parentWindow));
             UploadFileCommand = ReactiveCommand.CreateFromTask(UploadFileAsync);
+            DownloadPdfCommand = ReactiveCommand.CreateFromTask(DownloadPdfAsync);
+            DownloadJsonCommand = ReactiveCommand.CreateFromTask(DownloadJsonAsync);
         }
 
         private async Task UploadFileAsync()
@@ -130,6 +134,74 @@ namespace CreditRiskSystem.Client.ViewModels
                 {
                     Result = $"Ошибка при обработке файла: {ex.Message}";
                 }
+            }
+        }
+
+        private async Task DownloadPdfAsync()
+        {
+            try
+            {
+                // Отправляем GET-запрос к эндпоинту для получения PDF
+                var response = await _httpClient.GetAsync("api/FinancialData/download/pdf");
+                if (response.IsSuccessStatusCode)
+                {
+                    // Сохраняем файл на диск
+                    var saveDialog = new SaveFileDialog
+                    {
+                        Title = "Сохранить PDF",
+                        InitialFileName = "result.pdf",
+                        Filters = { new FileDialogFilter { Name = "PDF файлы", Extensions = { "pdf" } } }
+                    };
+
+                    var path = await saveDialog.ShowAsync(_parentWindow);
+                    if (!string.IsNullOrWhiteSpace(path))
+                    {
+                        using var fileStream = File.Create(path);
+                        await response.Content.CopyToAsync(fileStream);
+                    }
+                }
+                else
+                {
+                    Result = $"Ошибка: {response.ReasonPhrase}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Result = $"Ошибка при скачивании PDF: {ex.Message}";
+            }
+        }
+
+        private async Task DownloadJsonAsync()
+        {
+            try
+            {
+                // Отправляем GET-запрос к эндпоинту для получения JSON
+                var response = await _httpClient.GetAsync("api/FinancialData/download/json");
+                if (response.IsSuccessStatusCode)
+                {
+                    // Сохраняем файл на диск
+                    var saveDialog = new SaveFileDialog
+                    {
+                        Title = "Сохранить JSON",
+                        InitialFileName = "result.json",
+                        Filters = { new FileDialogFilter { Name = "JSON файлы", Extensions = { "json" } } }
+                    };
+
+                    var path = await saveDialog.ShowAsync(_parentWindow);
+                    if (!string.IsNullOrWhiteSpace(path))
+                    {
+                        using var fileStream = File.Create(path);
+                        await response.Content.CopyToAsync(fileStream);
+                    }
+                }
+                else
+                {
+                    Result = $"Ошибка: {response.ReasonPhrase}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Result = $"Ошибка при скачивании JSON: {ex.Message}";
             }
         }
     }
