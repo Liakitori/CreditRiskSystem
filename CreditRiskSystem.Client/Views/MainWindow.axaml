@@ -8,12 +8,31 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="CreditRiskSystem.Client">
-	<StackPanel Margin="20" Spacing="10">
-		<Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}" />
-        <!-- Новые кнопки для скачивания -->
-        <Button Content="Скачать PDF" Command="{Binding DownloadPdfCommand}" />
-        <Button Content="Скачать JSON" Command="{Binding DownloadJsonCommand}" />
-		<TextBlock Text="Результаты расчета:" />
-		<TextBox Text="{Binding Result}" IsReadOnly="True" TextWrapping="Wrap" MinHeight="200" />
-	</StackPanel>
+	<Grid>
+        <!-- Меню "Файл" -->
+        <Menu HorizontalAlignment="Left" VerticalAlignment="Top">
+            <MenuItem Header="Файл">
+                <MenuItem Header="Импортировать Excel" Command="{Binding DownloadJsonCommand}"/>
+                <MenuItem Header="Экспортировать в PDF" Command="{Binding DownloadPdfCommand}"/>
+                <MenuItem Header="Экспортировать в JSON" Command="{Binding DownloadJsonCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Настройки"/>
+            <MenuItem Header="История"/>
+        </Menu>
+
+        <!-- Кружок с иконкой пользователя -->
+        <Ellipse Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,10,0" Fill="#4CAF50"/>
+        <TextBlock Text="👤" FontSize="20" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,15,15,0"/>
+
+        <!-- Основное содержимое -->
+        <StackPanel Margin="20" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header"/>
+            <Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}"/>
+            <TextBlock Text="Результаты расчета:"/>
+            <TextBox Text="{Binding Result}" IsReadOnly="True" TextWrapping="Wrap" MinHeight="200"/>
+        </StackPanel>
+		
+        <!-- Кнопка "Выйти" -->
+        <Button Content="Выйти" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,10"/>
+    </Grid>
 </Window>
