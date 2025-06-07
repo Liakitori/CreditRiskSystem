@@ -30,12 +30,12 @@
             <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header" HorizontalAlignment="Center"/>
             <Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}"/>
             <TextBlock Text="Результаты расчета:" HorizontalAlignment="Center"/>
-            <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" HorizontalAlignment="Stretch"/>
+            <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" HorizontalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" Spacing="20">
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" VerticalAlignment="Top" Width="500"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result3}" VerticalAlignment="Top" Width="500"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result4}" VerticalAlignment="Top" Width="500"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result5}" VerticalAlignment="Top" Width="500"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" VerticalAlignment="Top" Width="400"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result3}" VerticalAlignment="Top" Width="400"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result4}" VerticalAlignment="Top" Width="400"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result5}" VerticalAlignment="Top" Width="400"/>
             </StackPanel>
         </StackPanel>
 		
