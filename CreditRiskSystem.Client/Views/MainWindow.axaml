@@ -10,12 +10,4 @@
         Title="CreditRiskSystem.Client">
 
 	<ContentControl Content="{Binding CurrentViewModel}"/>
-	
-	<!--StackPanel Margin="20" Spacing="10">
-		<Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}" />
-        <Button Content="Скачать PDF" Command="{Binding DownloadPdfCommand}" />
-        <Button Content="Скачать JSON" Command="{Binding DownloadJsonCommand}" />
-		<TextBlock Text="Результаты расчета:" />
-		<TextBox Text="{Binding Result}" IsReadOnly="True" TextWrapping="Wrap" MinHeight="200" />
-	</StackPanel -->
 </Window>

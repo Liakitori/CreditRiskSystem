@@ -19,10 +19,10 @@ public class MainWindowViewModel : ViewModelBase
 
     [Reactive] public ViewModelBase CurrentViewModel { get; set; }
 
-    public MainWindowViewModel(INavigationService navigationService, AuthorizationViewModel authorizationViewModel)
+    public MainWindowViewModel(INavigationService navigationService, MainViewModel mainViewModel)
     {
         _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
-        CurrentViewModel = authorizationViewModel;
+        CurrentViewModel = mainViewModel;
         (navigationService as NavigationService).SetMainViewModel(this);
     }
 }
