@@ -30,12 +30,12 @@
             <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header"/>
             <Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}"/>
             <TextBlock Text="Результаты расчета:"/>
-            <WrapPanel>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" MinHeight="200"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" MinHeight="200"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result3}" MinHeight="200"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result4}" MinHeight="200"/>
-                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result5}" MinHeight="200"/>
+            <WrapPanel Orientation="Horizontal">
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" Height="400" Width="400"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" Height="400" Width="400"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result3}" Height="400" Width="400"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result4}" Height="400" Width="400"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result5}" Height="400" Width="400"/>
             </WrapPanel>
         </StackPanel>
 		

@@ -65,7 +65,7 @@ namespace CreditRiskSystem.Client.ViewModels
                         var sb5 = new StringBuilder();
 
                         // Модели кредитного риска
-                        sb1.AppendLine("# Модели кредитного риска");
+                        sb1.AppendLine("### Модели кредитного риска");
                         sb1.AppendLine($"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})");
                         sb1.AppendLine($"Springate: {riskResult.SpringateScore:F2} ({riskResult.SpringateRiskLevel})");
                         sb1.AppendLine($"Fulmer: {riskResult.FulmerScore:F2} ({riskResult.FulmerRiskLevel})");
@@ -75,7 +75,7 @@ namespace CreditRiskSystem.Client.ViewModels
                         sb1.AppendLine();
 
                         // Рентабельность
-                        sb2.AppendLine("# Рентабельность");
+                        sb2.AppendLine("### Рентабельность");
                         sb2.AppendLine($"Рентабельность объема продаж (Р1): {riskResult.Р1:F2}%");
                         sb2.AppendLine($"Бухгалтерская рентабельность (Р2): {riskResult.Р2:F2}%");
                         sb2.AppendLine($"Чистая рентабельность (Р3): {riskResult.Р3:F2}%");
@@ -86,7 +86,7 @@ namespace CreditRiskSystem.Client.ViewModels
                         sb2.AppendLine();
 
                         // Деловая активность
-                        sb3.AppendLine("# Деловая активность");
+                        sb3.AppendLine("### Деловая активность");
                         sb3.AppendLine($"Общая оборачиваемость капитала (ДА1): {riskResult.ДА1:F2} оборотов");
                         sb3.AppendLine($"Оборачиваемость оборотных средств (ДА2): {riskResult.ДА2:F2} оборотов");
                         sb3.AppendLine($"Отдача нематериальных активов (ДА3): {riskResult.ДА3:F2} оборотов");
@@ -101,7 +101,7 @@ namespace CreditRiskSystem.Client.ViewModels
                         sb3.AppendLine();
 
                         // Финансовая устойчивость
-                        sb4.AppendLine("# Финансовая устойчивость");
+                        sb4.AppendLine("### Финансовая устойчивость");
                         sb4.AppendLine($"Коэффициент капитализации (ФУ1): {riskResult.ФУ1:F2}");
                         sb4.AppendLine($"Собственный капитал в обороте (ФУ2): {riskResult.ФУ2:F2} тыс. руб.");
                         sb4.AppendLine($"Обеспеченность запасов собственными источниками (ФУ3): {riskResult.ФУ3:F2}");
@@ -113,7 +113,7 @@ namespace CreditRiskSystem.Client.ViewModels
                         sb4.AppendLine();
 
                         // Платёжеспособность
-                        sb5.AppendLine("# Платёжеспособность");
+                        sb5.AppendLine("### Платёжеспособность");
                         sb5.AppendLine($"Общий показатель платежеспособности (П1): {riskResult.П1:F2}");
                         sb5.AppendLine($"Коэффициент абсолютной ликвидности (П2): {riskResult.П2:F2}");
                         sb5.AppendLine($"Коэффициент быстрой ликвидности (П3): {riskResult.П3:F2}");
