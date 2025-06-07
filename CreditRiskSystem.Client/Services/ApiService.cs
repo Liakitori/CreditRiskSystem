@@ -9,21 +9,29 @@ using System.Threading.Tasks;
 
 namespace CreditRiskSystem.Client.Services
 {
-    public class ApiService(HttpClient httpClient) : IApiService
+    public class ApiService : IApiService
     {
-        private string _token;
+        private readonly HttpClient _httpClient;
+        private static string _token;
+
+        public ApiService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+            if (!string.IsNullOrEmpty(_token))
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+        }
 
         public void SetToken(string token)
         {
             _token = token;
-            httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrEmpty(token)
+            _httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrEmpty(token)
                 ? null
                 : new AuthenticationHeaderValue("Bearer", token);
         }
 
         public async Task<string> LoginAsync(string username, string password)
         {
-            var response = await httpClient.PostAsJsonAsync("api/auth/login", new { Username = username, Password = password });
+            var response = await _httpClient.PostAsJsonAsync("api/auth/login", new { Username = username, Password = password });
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
             return result.Token;
@@ -31,7 +39,7 @@ namespace CreditRiskSystem.Client.Services
 
         public async Task RegisterAsync(string username, string password)
         {
-            var response = await httpClient.PostAsJsonAsync("api/auth/register", new { Username = username, Password = password });
+            var response = await _httpClient.PostAsJsonAsync("api/auth/register", new { Username = username, Password = password });
             response.EnsureSuccessStatusCode();
         }
 
@@ -40,28 +48,28 @@ namespace CreditRiskSystem.Client.Services
             await using var stream = File.OpenRead(filePath);
             var content = new MultipartFormDataContent();
             content.Add(new StreamContent(stream), "file", Path.GetFileName(filePath));
-            var response = await httpClient.PostAsync("api/FinancialData/upload", content);
+            var response = await _httpClient.PostAsync("api/FinancialData/upload", content);
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<RiskAssessmentResult>();
         }
 
         public async Task<Stream> DownloadPdfAsync(Guid id)
         {
-            var response = await httpClient.GetAsync($"api/FinancialData/download/pdf/{id}");
+            var response = await _httpClient.GetAsync($"api/FinancialData/download/pdf/{id}");
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStreamAsync();
         }
 
         public async Task<Stream> DownloadJsonAsync(Guid id)
         {
-            var response = await httpClient.GetAsync($"api/FinancialData/download/json/{id}");
+            var response = await _httpClient.GetAsync($"api/FinancialData/download/json/{id}");
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStreamAsync();
         }
 
         public async Task<List<RiskAssessmentResult>> GetHistoryAsync()
         {
-            var response = await httpClient.GetAsync("api/FinancialData/history");
+            var response = await _httpClient.GetAsync("api/FinancialData/history");
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<List<RiskAssessmentResult>>();
         }

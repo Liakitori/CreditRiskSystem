@@ -56,20 +56,7 @@ public static class ServiceProvider
 
             if (t == typeof(MainWindowViewModel) || t == typeof(MainViewModel))
             {
-                if (t == typeof(MainViewModel))
-                {
-                    sc.AddSingleton(t, provider =>
-                    {
-                        var httpClient = provider.GetRequiredService<IApiService>();
-                        var dialogService = provider.GetRequiredService<IDialogService>();
-                        var navigationService = provider.GetRequiredService<INavigationService>();
-                        return new MainViewModel(httpClient, dialogService, navigationService);
-                    });
-                }
-                else
-                {
-                    sc.AddSingleton(t);
-                }
+                sc.AddSingleton(t);
             }
             else
             {
