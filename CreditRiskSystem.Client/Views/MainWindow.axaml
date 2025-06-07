@@ -3,7 +3,8 @@
         xmlns:vm="using:CreditRiskSystem.Client.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        xmlns:mdxaml="https://github.com/whistyun/Markdown.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600" WindowState="FullScreen"
         x:Class="CreditRiskSystem.Client.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -29,7 +30,13 @@
             <TextBlock Text="Добро пожаловать в систему оценки кредитного риска" Classes="header"/>
             <Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}"/>
             <TextBlock Text="Результаты расчета:"/>
-            <TextBox Text="{Binding Result}" IsReadOnly="True" TextWrapping="Wrap" MinHeight="200"/>
+            <WrapPanel>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result1}" MinHeight="200"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result2}" MinHeight="200"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result3}" MinHeight="200"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result4}" MinHeight="200"/>
+                <mdxaml:MarkdownScrollViewer Markdown="{Binding Result5}" MinHeight="200"/>
+            </WrapPanel>
         </StackPanel>
 		
         <!-- Кнопка "Выйти" -->

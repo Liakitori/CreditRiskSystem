@@ -17,7 +17,11 @@ namespace CreditRiskSystem.Client.ViewModels
         private readonly HttpClient _httpClient;
         private readonly Window _parentWindow;
 
-        [Reactive] public string Result { get; set; }
+        [Reactive] public string Result1 { get; set; }
+        [Reactive] public string Result2 { get; set; }
+        [Reactive] public string Result3 { get; set; }
+        [Reactive] public string Result4 { get; set; }
+        [Reactive] public string Result5 { get; set; }
 
         public ReactiveCommand<Unit, Unit> UploadFileCommand { get; }
         public ReactiveCommand<Unit, Unit> DownloadPdfCommand { get; }
@@ -54,66 +58,70 @@ namespace CreditRiskSystem.Client.ViewModels
                     if (response.IsSuccessStatusCode)
                     {
                         var riskResult = await response.Content.ReadFromJsonAsync<RiskAssessmentResult>();
-                        var sb = new StringBuilder();
+                        var sb1 = new StringBuilder();
+                        var sb2 = new StringBuilder();
+                        var sb3 = new StringBuilder();
+                        var sb4 = new StringBuilder();
+                        var sb5 = new StringBuilder();
 
                         // Модели кредитного риска
-                        sb.AppendLine("=== Модели кредитного риска ===");
-                        sb.AppendLine($"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})");
-                        sb.AppendLine($"Springate: {riskResult.SpringateScore:F2} ({riskResult.SpringateRiskLevel})");
-                        sb.AppendLine($"Fulmer: {riskResult.FulmerScore:F2} ({riskResult.FulmerRiskLevel})");
-                        sb.AppendLine($"Ohlson O-score: {riskResult.OhlsonOScore:F2} (Вероятность: {riskResult.OhlsonProbability:F2})");
-                        sb.AppendLine($"Zmijewski: {riskResult.ZmijewskiScore:F2} (Вероятность: {riskResult.ZmijewskiProbability:F2})");
-                        sb.AppendLine($"Общая оценка кредитного риска: {riskResult.OverallRiskAssessment}");
-                        sb.AppendLine();
+                        sb1.AppendLine("# Модели кредитного риска");
+                        sb1.AppendLine($"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})");
+                        sb1.AppendLine($"Springate: {riskResult.SpringateScore:F2} ({riskResult.SpringateRiskLevel})");
+                        sb1.AppendLine($"Fulmer: {riskResult.FulmerScore:F2} ({riskResult.FulmerRiskLevel})");
+                        sb1.AppendLine($"Ohlson O-score: {riskResult.OhlsonOScore:F2} (Вероятность: {riskResult.OhlsonProbability:F2})");
+                        sb1.AppendLine($"Zmijewski: {riskResult.ZmijewskiScore:F2} (Вероятность: {riskResult.ZmijewskiProbability:F2})");
+                        sb1.AppendLine($"Общая оценка кредитного риска: {riskResult.OverallRiskAssessment}");
+                        sb1.AppendLine();
 
                         // Рентабельность
-                        sb.AppendLine("=== Рентабельность ===");
-                        sb.AppendLine($"Рентабельность объема продаж (Р1): {riskResult.Р1:F2}%");
-                        sb.AppendLine($"Бухгалтерская рентабельность (Р2): {riskResult.Р2:F2}%");
-                        sb.AppendLine($"Чистая рентабельность (Р3): {riskResult.Р3:F2}%");
-                        sb.AppendLine($"Экономическая рентабельность (Р4): {riskResult.Р4:F2}%");
-                        sb.AppendLine($"Рентабельность собственного капитала (Р5): {riskResult.Р5:F2}%");
-                        sb.AppendLine($"Валовая рентабельность (Р6): {riskResult.Р6:F2}%");
-                        sb.AppendLine($"Рентабельность реализованной продукции (Р7): {riskResult.Р7:F2}%");
-                        sb.AppendLine();
+                        sb2.AppendLine("# Рентабельность");
+                        sb2.AppendLine($"Рентабельность объема продаж (Р1): {riskResult.Р1:F2}%");
+                        sb2.AppendLine($"Бухгалтерская рентабельность (Р2): {riskResult.Р2:F2}%");
+                        sb2.AppendLine($"Чистая рентабельность (Р3): {riskResult.Р3:F2}%");
+                        sb2.AppendLine($"Экономическая рентабельность (Р4): {riskResult.Р4:F2}%");
+                        sb2.AppendLine($"Рентабельность собственного капитала (Р5): {riskResult.Р5:F2}%");
+                        sb2.AppendLine($"Валовая рентабельность (Р6): {riskResult.Р6:F2}%");
+                        sb2.AppendLine($"Рентабельность реализованной продукции (Р7): {riskResult.Р7:F2}%");
+                        sb2.AppendLine();
 
                         // Деловая активность
-                        sb.AppendLine("=== Деловая активность ===");
-                        sb.AppendLine($"Общая оборачиваемость капитала (ДА1): {riskResult.ДА1:F2} оборотов");
-                        sb.AppendLine($"Оборачиваемость оборотных средств (ДА2): {riskResult.ДА2:F2} оборотов");
-                        sb.AppendLine($"Отдача нематериальных активов (ДА3): {riskResult.ДА3:F2} оборотов");
-                        sb.AppendLine($"Фондоотдача (ДА4): {riskResult.ДА4:F2} оборотов");
-                        sb.AppendLine($"Отдача собственного капитала (ДА5): {riskResult.ДА5:F2} оборотов");
-                        sb.AppendLine($"Оборачиваемость средств в расчетах (ДА6): {riskResult.ДА6:F2} оборотов");
-                        sb.AppendLine($"Оборачиваемость кредиторской задолженности (ДА7): {riskResult.ДА7:F2} оборотов");
-                        sb.AppendLine($"Оборачиваемость материальных средств (ДА8): {riskResult.ДА8:F2} дней");
-                        sb.AppendLine($"Оборачиваемость денежных средств (ДА9): {riskResult.ДА9:F2} дней");
-                        sb.AppendLine($"Срок погашения дебиторской задолженности (ДА10): {riskResult.ДА10:F2} дней");
-                        sb.AppendLine($"Срок погашения кредиторской задолженности (ДА11): {riskResult.ДА11:F2} дней");
-                        sb.AppendLine();
+                        sb3.AppendLine("# Деловая активность");
+                        sb3.AppendLine($"Общая оборачиваемость капитала (ДА1): {riskResult.ДА1:F2} оборотов");
+                        sb3.AppendLine($"Оборачиваемость оборотных средств (ДА2): {riskResult.ДА2:F2} оборотов");
+                        sb3.AppendLine($"Отдача нематериальных активов (ДА3): {riskResult.ДА3:F2} оборотов");
+                        sb3.AppendLine($"Фондоотдача (ДА4): {riskResult.ДА4:F2} оборотов");
+                        sb3.AppendLine($"Отдача собственного капитала (ДА5): {riskResult.ДА5:F2} оборотов");
+                        sb3.AppendLine($"Оборачиваемость средств в расчетах (ДА6): {riskResult.ДА6:F2} оборотов");
+                        sb3.AppendLine($"Оборачиваемость кредиторской задолженности (ДА7): {riskResult.ДА7:F2} оборотов");
+                        sb3.AppendLine($"Оборачиваемость материальных средств (ДА8): {riskResult.ДА8:F2} дней");
+                        sb3.AppendLine($"Оборачиваемость денежных средств (ДА9): {riskResult.ДА9:F2} дней");
+                        sb3.AppendLine($"Срок погашения дебиторской задолженности (ДА10): {riskResult.ДА10:F2} дней");
+                        sb3.AppendLine($"Срок погашения кредиторской задолженности (ДА11): {riskResult.ДА11:F2} дней");
+                        sb3.AppendLine();
 
                         // Финансовая устойчивость
-                        sb.AppendLine("=== Финансовая устойчивость ===");
-                        sb.AppendLine($"Коэффициент капитализации (ФУ1): {riskResult.ФУ1:F2}");
-                        sb.AppendLine($"Собственный капитал в обороте (ФУ2): {riskResult.ФУ2:F2} тыс. руб.");
-                        sb.AppendLine($"Обеспеченность запасов собственными источниками (ФУ3): {riskResult.ФУ3:F2}");
-                        sb.AppendLine($"Коэффициент автономии (ФУ4): {riskResult.ФУ4:F2}");
-                        sb.AppendLine($"Коэффициент финансирования (ФУ5): {riskResult.ФУ5:F2}");
-                        sb.AppendLine($"Коэффициент финансовой устойчивости (ФУ6): {riskResult.ФУ6:F2}");
-                        sb.AppendLine($"Коэффициент маневренности (ФУ7): {riskResult.ФУ7:F2}");
-                        sb.AppendLine($"Коэффициент мобилизации (ФУ8): {riskResult.ФУ8:F2}");
-                        sb.AppendLine();
+                        sb4.AppendLine("# Финансовая устойчивость");
+                        sb4.AppendLine($"Коэффициент капитализации (ФУ1): {riskResult.ФУ1:F2}");
+                        sb4.AppendLine($"Собственный капитал в обороте (ФУ2): {riskResult.ФУ2:F2} тыс. руб.");
+                        sb4.AppendLine($"Обеспеченность запасов собственными источниками (ФУ3): {riskResult.ФУ3:F2}");
+                        sb4.AppendLine($"Коэффициент автономии (ФУ4): {riskResult.ФУ4:F2}");
+                        sb4.AppendLine($"Коэффициент финансирования (ФУ5): {riskResult.ФУ5:F2}");
+                        sb4.AppendLine($"Коэффициент финансовой устойчивости (ФУ6): {riskResult.ФУ6:F2}");
+                        sb4.AppendLine($"Коэффициент маневренности (ФУ7): {riskResult.ФУ7:F2}");
+                        sb4.AppendLine($"Коэффициент мобилизации (ФУ8): {riskResult.ФУ8:F2}");
+                        sb4.AppendLine();
 
                         // Платёжеспособность
-                        sb.AppendLine("=== Платёжеспособность ===");
-                        sb.AppendLine($"Общий показатель платежеспособности (П1): {riskResult.П1:F2}");
-                        sb.AppendLine($"Коэффициент абсолютной ликвидности (П2): {riskResult.П2:F2}");
-                        sb.AppendLine($"Коэффициент быстрой ликвидности (П3): {riskResult.П3:F2}");
-                        sb.AppendLine($"Коэффициент текущей ликвидности (П4): {riskResult.П4:F2}");
-                        sb.AppendLine($"Коэффициент маневренности функционирующего капитала (П5): {riskResult.П5:F2}");
-                        sb.AppendLine($"Доля оборотных средств в активах (П6): {riskResult.П6:F2}");
-                        sb.AppendLine($"Коэффициент обеспеченности собственными средствами (П7): {riskResult.П7:F2}");
-                        sb.AppendLine($"Коэффициент обеспеченности обязательств активами (П8): {riskResult.П8:F2}");
+                        sb5.AppendLine("# Платёжеспособность");
+                        sb5.AppendLine($"Общий показатель платежеспособности (П1): {riskResult.П1:F2}");
+                        sb5.AppendLine($"Коэффициент абсолютной ликвидности (П2): {riskResult.П2:F2}");
+                        sb5.AppendLine($"Коэффициент быстрой ликвидности (П3): {riskResult.П3:F2}");
+                        sb5.AppendLine($"Коэффициент текущей ликвидности (П4): {riskResult.П4:F2}");
+                        sb5.AppendLine($"Коэффициент маневренности функционирующего капитала (П5): {riskResult.П5:F2}");
+                        sb5.AppendLine($"Доля оборотных средств в активах (П6): {riskResult.П6:F2}");
+                        sb5.AppendLine($"Коэффициент обеспеченности собственными средствами (П7): {riskResult.П7:F2}");
+                        sb5.AppendLine($"Коэффициент обеспеченности обязательств активами (П8): {riskResult.П8:F2}");
 
                         /*Result = $"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})\n" +
                                  $"Springate: {riskResult.SpringateScore:F2} ({riskResult.SpringateRiskLevel})\n" +
@@ -121,18 +129,22 @@ namespace CreditRiskSystem.Client.ViewModels
                                  $"Ohlson O-score: {riskResult.OhlsonOScore:F2} (Вероятность: {riskResult.OhlsonProbability:F2})\n" +
                                  $"Zmijewski: {riskResult.ZmijewskiScore:F2} (Вероятность: {riskResult.ZmijewskiProbability:F2})\n" +
                                  $"Общая оценка кредитного риска: {riskResult.OverallRiskAssessment}";*/
-                        Result = sb.ToString();
+                        Result1 = sb1.ToString();
+                        Result2 = sb2.ToString();
+                        Result3 = sb3.ToString();
+                        Result4 = sb4.ToString();
+                        Result5 = sb5.ToString();
                     }
                     else
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();
-                        Result = $"Ошибка сервера: {response.ReasonPhrase}\nДетали: {errorContent}";
+                        Result1 = $"Ошибка сервера: {response.ReasonPhrase}\nДетали: {errorContent}";
                         /*Result = $"Ошибка: {response.ReasonPhrase}";*/
                     }
                 }
                 catch (Exception ex)
                 {
-                    Result = $"Ошибка при обработке файла: {ex.Message}";
+                    Result1 = $"Ошибка при обработке файла: {ex.Message}";
                 }
             }
         }
@@ -162,12 +174,12 @@ namespace CreditRiskSystem.Client.ViewModels
                 }
                 else
                 {
-                    Result = $"Ошибка: {response.ReasonPhrase}";
+                    Result1 = $"Ошибка: {response.ReasonPhrase}";
                 }
             }
             catch (Exception ex)
             {
-                Result = $"Ошибка при скачивании PDF: {ex.Message}";
+                Result1 = $"Ошибка при скачивании PDF: {ex.Message}";
             }
         }
 
@@ -196,12 +208,12 @@ namespace CreditRiskSystem.Client.ViewModels
                 }
                 else
                 {
-                    Result = $"Ошибка: {response.ReasonPhrase}";
+                    Result1 = $"Ошибка: {response.ReasonPhrase}";
                 }
             }
             catch (Exception ex)
             {
-                Result = $"Ошибка при скачивании JSON: {ex.Message}";
+                Result1 = $"Ошибка при скачивании JSON: {ex.Message}";
             }
         }
     }

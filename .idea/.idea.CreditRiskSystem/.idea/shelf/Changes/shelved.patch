@@ -1,0 +1,28 @@
+Index: CreditRiskSystem.Client/ServiceProvider.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System;\r\nusing System.Net.Http;\r\nusing System.Reflection;\r\nusing Microsoft.Extensions.DependencyInjection;\r\nusing CreditRiskSystem.Client.Interfaces;\r\nusing CreditRiskSystem.Client.Services;\r\nusing CreditRiskSystem.Client.ViewModels;\r\nusing CreditRiskSystem.Client.Views;\r\n\r\nnamespace CreditRiskSystem.Client;\r\n\r\npublic static class ServiceProvider\r\n{\r\n    private static IServiceProvider? _serviceProvider;\r\n\r\n    public static IServiceProvider Services\r\n    {\r\n        get => _serviceProvider ?? throw new InvalidOperationException(\"ServiceProvider not initialized\");\r\n        private set => _serviceProvider = value;\r\n    }\r\n\r\n    public static void Initialize()\r\n    {\r\n        var services = new ServiceCollection();\r\n\r\n        // Регистрация Http клиента\r\n        services.AddHttpClient(\"ServerApi\", client =>\r\n        {\r\n            client.BaseAddress = new Uri(\"https://localhost:7148\");\r\n        });\r\n\r\n        // Регистрация сервисов\r\n        services.AddSingleton<INavigationService, NavigationService>();\r\n        services.AddSingleton<MainWindow>();\r\n        services.AddSingleton<IDialogService>(provider => \r\n            new DialogService(provider.GetRequiredService<MainWindow>()));\r\n\r\n        // Регистрация MainWindowViewModel\r\n        services.AddSingleton<MainWindowViewModel>();\r\n\r\n        // Регистрация остальных ViewModel-ей\r\n        RegisterViewModels(services, Assembly.GetExecutingAssembly());\r\n\r\n        // Построение провайдера сервисов\r\n        Services = services.BuildServiceProvider();\r\n\r\n        // Настройка NavigationService\r\n        var navigationService = Services.GetRequiredService<INavigationService>() as NavigationService;\r\n        navigationService?.SetMainViewModel(Services.GetRequiredService<MainWindowViewModel>());\r\n    }\r\n    private static void RegisterViewModels(IServiceCollection sc, Assembly asm)\r\n    {\r\n        foreach (var t in asm.GetTypes())\r\n        {\r\n            if (!t.Name.EndsWith(\"ViewModel\") || t.IsAbstract) continue;\r\n\r\n            if (t == typeof(MainWindowViewModel) || t == typeof(MainViewModel))\r\n            {\r\n                if (t == typeof(MainViewModel))\r\n                {\r\n                    sc.AddSingleton(t, provider =>\r\n                    {\r\n                        var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient(\"ServerApi\");\r\n                        var dialogService = provider.GetRequiredService<IDialogService>();\r\n                        return new MainViewModel(httpClient, dialogService);\r\n                    });\r\n                }\r\n                else\r\n                {\r\n                    sc.AddSingleton(t);\r\n                }\r\n            }\r\n            else\r\n            {\r\n                sc.AddTransient(t);\r\n            }\r\n        }\r\n    }\r\n    /*private static void RegisterViewModels(IServiceCollection sc, Assembly asm)\r\n    {\r\n        foreach (var t in asm.GetTypes())\r\n        {\r\n            if (!t.Name.EndsWith(\"ViewModel\") || t.IsAbstract) continue;\r\n\r\n            if (t == typeof(MainWindowViewModel))\r\n                sc.AddSingleton(t);\r\n            else\r\n                sc.AddTransient(t);\r\n        }\r\n    }*/\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/CreditRiskSystem.Client/ServiceProvider.cs b/CreditRiskSystem.Client/ServiceProvider.cs
+--- a/CreditRiskSystem.Client/ServiceProvider.cs	(revision 1cce30c35f969107ae9bb512999aaa6de0bddace)
++++ b/CreditRiskSystem.Client/ServiceProvider.cs	(date 1749316872950)
+@@ -76,16 +76,4 @@
+             }
+         }
+     }
+-    /*private static void RegisterViewModels(IServiceCollection sc, Assembly asm)
+-    {
+-        foreach (var t in asm.GetTypes())
+-        {
+-            if (!t.Name.EndsWith("ViewModel") || t.IsAbstract) continue;
+-
+-            if (t == typeof(MainWindowViewModel))
+-                sc.AddSingleton(t);
+-            else
+-                sc.AddTransient(t);
+-        }
+-    }*/
+ }
+\ No newline at end of file

@@ -1,0 +1,46 @@
+Index: CreditRiskSystem.Client/ServiceProvider.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System;\r\nusing System.Net.Http;\r\nusing System.Reflection;\r\nusing Microsoft.Extensions.DependencyInjection;\r\nusing CreditRiskSystem.Client.Interfaces;\r\nusing CreditRiskSystem.Client.Services;\r\nusing CreditRiskSystem.Client.ViewModels;\r\nusing CreditRiskSystem.Client.Views;\r\n\r\nnamespace CreditRiskSystem.Client;\r\n\r\npublic static class ServiceProvider\r\n{\r\n    private static IServiceProvider? _serviceProvider;\r\n\r\n    public static IServiceProvider Services\r\n    {\r\n        get => _serviceProvider ?? throw new InvalidOperationException(\"ServiceProvider not initialized\");\r\n        private set => _serviceProvider = value;\r\n    }\r\n\r\n    public static void Initialize()\r\n    {\r\n        var services = new ServiceCollection();\r\n\r\n        // Регистрация Http клиента\r\n        services.AddHttpClient<IApiService, ApiService>(\"ServerApi\", client =>\r\n        {\r\n            client.BaseAddress = new Uri(\"https://localhost:7148\");\r\n        });\r\n\r\n        // Регистрация сервисов\r\n        services.AddSingleton<INavigationService, NavigationService>();\r\n        services.AddSingleton<MainWindow>();\r\n        services.AddSingleton<IDialogService>(provider => \r\n            new DialogService(provider.GetRequiredService<MainWindow>()));\r\n\r\n        // Регистрация MainWindowViewModel\r\n        services.AddSingleton<MainWindowViewModel>();\r\n\r\n        // Регистрация остальных ViewModel-ей\r\n        RegisterViewModels(services, Assembly.GetExecutingAssembly());\r\n\r\n        // Построение провайдера сервисов\r\n        Services = services.BuildServiceProvider();\r\n\r\n        // Настройка NavigationService\r\n        var navigationService = Services.GetRequiredService<INavigationService>() as NavigationService;\r\n        navigationService?.SetMainViewModel(Services.GetRequiredService<MainWindowViewModel>());\r\n    }\r\n    private static void RegisterViewModels(IServiceCollection sc, Assembly asm)\r\n    {\r\n        foreach (var t in asm.GetTypes())\r\n        {\r\n            if (!t.Name.EndsWith(\"ViewModel\") || t.IsAbstract) continue;\r\n\r\n            if (t == typeof(MainWindowViewModel) || t == typeof(MainViewModel))\r\n            {\r\n                sc.AddSingleton(t);\r\n            }\r\n            else\r\n            {\r\n                sc.AddTransient(t);\r\n            }\r\n        }\r\n    }\r\n    /*private static void RegisterViewModels(IServiceCollection sc, Assembly asm)\r\n    {\r\n        foreach (var t in asm.GetTypes())\r\n        {\r\n            if (!t.Name.EndsWith(\"ViewModel\") || t.IsAbstract) continue;\r\n\r\n            if (t == typeof(MainWindowViewModel))\r\n                sc.AddSingleton(t);\r\n            else\r\n                sc.AddTransient(t);\r\n        }\r\n    }*/\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/CreditRiskSystem.Client/ServiceProvider.cs b/CreditRiskSystem.Client/ServiceProvider.cs
+--- a/CreditRiskSystem.Client/ServiceProvider.cs	(revision 1f6e4a59acd3991b8e3e074be8b9c4cf4eaa1352)
++++ b/CreditRiskSystem.Client/ServiceProvider.cs	(date 1749335372922)
+@@ -28,7 +28,7 @@
+         {
+             client.BaseAddress = new Uri("https://localhost:7148");
+         });
+-
++        
+         // Регистрация сервисов
+         services.AddSingleton<INavigationService, NavigationService>();
+         services.AddSingleton<MainWindow>();
+Index: CreditRiskSystem.Client/Services/ApiService.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using CreditRiskSystem.Common.Models;\r\nusing System;\r\nusing System.Collections.Generic;\r\nusing System.IO;\r\nusing System.Net.Http;\r\nusing System.Net.Http.Headers;\r\nusing System.Net.Http.Json;\r\nusing System.Threading.Tasks;\r\n\r\nnamespace CreditRiskSystem.Client.Services\r\n{\r\n    public class ApiService : IApiService\r\n    {\r\n        private readonly HttpClient _httpClient;\r\n        private static string _token;\r\n\r\n        public ApiService(HttpClient httpClient)\r\n        {\r\n            _httpClient = httpClient;\r\n            if (!string.IsNullOrEmpty(_token))\r\n                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(\"Bearer\", _token);\r\n        }\r\n\r\n        public void SetToken(string token)\r\n        {\r\n            _token = token;\r\n            _httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrEmpty(token)\r\n                ? null\r\n                : new AuthenticationHeaderValue(\"Bearer\", token);\r\n        }\r\n\r\n        public async Task<string> LoginAsync(string username, string password)\r\n        {\r\n            var response = await _httpClient.PostAsJsonAsync(\"api/auth/login\", new { Username = username, Password = password });\r\n            response.EnsureSuccessStatusCode();\r\n            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();\r\n            return result.Token;\r\n        }\r\n\r\n        public async Task RegisterAsync(string username, string password)\r\n        {\r\n            var response = await _httpClient.PostAsJsonAsync(\"api/auth/register\", new { Username = username, Password = password });\r\n            response.EnsureSuccessStatusCode();\r\n        }\r\n\r\n        public async Task<RiskAssessmentResult> UploadFileAsync(string filePath)\r\n        {\r\n            await using var stream = File.OpenRead(filePath);\r\n            var content = new MultipartFormDataContent();\r\n            content.Add(new StreamContent(stream), \"file\", Path.GetFileName(filePath));\r\n            var response = await _httpClient.PostAsync(\"api/FinancialData/upload\", content);\r\n            response.EnsureSuccessStatusCode();\r\n            return await response.Content.ReadFromJsonAsync<RiskAssessmentResult>();\r\n        }\r\n\r\n        public async Task<Stream> DownloadPdfAsync(Guid id)\r\n        {\r\n            var response = await _httpClient.GetAsync($\"api/FinancialData/download/pdf/{id}\");\r\n            response.EnsureSuccessStatusCode();\r\n            return await response.Content.ReadAsStreamAsync();\r\n        }\r\n\r\n        public async Task<Stream> DownloadJsonAsync(Guid id)\r\n        {\r\n            var response = await _httpClient.GetAsync($\"api/FinancialData/download/json/{id}\");\r\n            response.EnsureSuccessStatusCode();\r\n            return await response.Content.ReadAsStreamAsync();\r\n        }\r\n\r\n        public async Task<List<RiskAssessmentResult>> GetHistoryAsync()\r\n        {\r\n            var response = await _httpClient.GetAsync(\"api/FinancialData/history\");\r\n            response.EnsureSuccessStatusCode();\r\n            return await response.Content.ReadFromJsonAsync<List<RiskAssessmentResult>>();\r\n        }\r\n    }\r\n\r\n    public class LoginResponse\r\n    {\r\n        public string Token { get; set; }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/CreditRiskSystem.Client/Services/ApiService.cs b/CreditRiskSystem.Client/Services/ApiService.cs
+--- a/CreditRiskSystem.Client/Services/ApiService.cs	(revision 1f6e4a59acd3991b8e3e074be8b9c4cf4eaa1352)
++++ b/CreditRiskSystem.Client/Services/ApiService.cs	(date 1749332672671)
+@@ -2,6 +2,7 @@
+ using System;
+ using System.Collections.Generic;
+ using System.IO;
++using System.Net;
+ using System.Net.Http;
+ using System.Net.Http.Headers;
+ using System.Net.Http.Json;
+@@ -18,7 +19,7 @@
+         {
+             _httpClient = httpClient;
+             if (!string.IsNullOrEmpty(_token))
+-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token);
++                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer");
+         }
+ 
+         public void SetToken(string token)

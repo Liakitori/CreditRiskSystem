@@ -1,0 +1,18 @@
+Index: CreditRiskSystem.Client/CreditRiskSystem.Client.csproj
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><Project Sdk=\"Microsoft.NET.Sdk\">\r\n  <PropertyGroup>\r\n    <OutputType>WinExe</OutputType>\r\n    <TargetFramework>net9.0</TargetFramework>\r\n    <Nullable>enable</Nullable>\r\n    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>\r\n    <ApplicationManifest>app.manifest</ApplicationManifest>\r\n    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>\r\n  </PropertyGroup>\r\n\r\n  <ItemGroup>\r\n    <Folder Include=\"Models\\\" />\r\n    <AvaloniaResource Include=\"Assets\\**\" />\r\n  </ItemGroup>\r\n\r\n  <ItemGroup>\r\n    <PackageReference Include=\"Avalonia\" Version=\"11.3.0\" />\r\n    <PackageReference Include=\"Avalonia.Desktop\" Version=\"11.3.0\" />\r\n    <PackageReference Include=\"Avalonia.Themes.Fluent\" Version=\"11.3.0\" />\r\n    <PackageReference Include=\"Avalonia.Fonts.Inter\" Version=\"11.3.0\" />\r\n    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->\r\n    <PackageReference Include=\"Avalonia.Diagnostics\" Version=\"11.3.0\">\r\n      <IncludeAssets Condition=\"'$(Configuration)' != 'Debug'\">None</IncludeAssets>\r\n      <PrivateAssets Condition=\"'$(Configuration)' != 'Debug'\">All</PrivateAssets>\r\n    </PackageReference>\r\n    <PackageReference Include=\"Avalonia.ReactiveUI\" Version=\"11.3.0\" />\r\n    <PackageReference Include=\"Microsoft.Extensions.DependencyInjection\" Version=\"9.0.5\" />\r\n    <PackageReference Include=\"Microsoft.Extensions.Http\" Version=\"9.0.5\" />\r\n    <PackageReference Include=\"ReactiveUI\" Version=\"20.2.45\" />\r\n    <PackageReference Include=\"ReactiveUI.Fody\" Version=\"19.5.41\" />\r\n    <PackageReference Include=\"System.Net.Http.Json\" Version=\"9.0.5\" />\r\n  </ItemGroup>\r\n\r\n  <ItemGroup>\r\n    <ProjectReference Include=\"..\\CreditRiskSystem.Common\\CreditRiskSystem.Common.csproj\" />\r\n  </ItemGroup>\r\n</Project>\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/CreditRiskSystem.Client/CreditRiskSystem.Client.csproj b/CreditRiskSystem.Client/CreditRiskSystem.Client.csproj
+--- a/CreditRiskSystem.Client/CreditRiskSystem.Client.csproj	(revision a83acd72979c3b347c96998bbaf1fc6ab3b21d3d)
++++ b/CreditRiskSystem.Client/CreditRiskSystem.Client.csproj	(date 1749328170485)
+@@ -15,6 +15,7 @@
+ 
+   <ItemGroup>
+     <PackageReference Include="Avalonia" Version="11.3.0" />
++    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.0" />
+     <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
+     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.0" />
+     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.0" />
