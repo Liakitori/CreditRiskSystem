@@ -48,8 +48,35 @@ public static class ServiceProvider
         var navigationService = Services.GetRequiredService<INavigationService>() as NavigationService;
         navigationService?.SetMainViewModel(Services.GetRequiredService<MainWindowViewModel>());
     }
-
     private static void RegisterViewModels(IServiceCollection sc, Assembly asm)
+    {
+        foreach (var t in asm.GetTypes())
+        {
+            if (!t.Name.EndsWith("ViewModel") || t.IsAbstract) continue;
+
+            if (t == typeof(MainWindowViewModel) || t == typeof(MainViewModel))
+            {
+                if (t == typeof(MainViewModel))
+                {
+                    sc.AddSingleton(t, provider =>
+                    {
+                        var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("ServerApi");
+                        var dialogService = provider.GetRequiredService<IDialogService>();
+                        return new MainViewModel(httpClient, dialogService);
+                    });
+                }
+                else
+                {
+                    sc.AddSingleton(t);
+                }
+            }
+            else
+            {
+                sc.AddTransient(t);
+            }
+        }
+    }
+    /*private static void RegisterViewModels(IServiceCollection sc, Assembly asm)
     {
         foreach (var t in asm.GetTypes())
         {
@@ -60,5 +87,5 @@ public static class ServiceProvider
             else
                 sc.AddTransient(t);
         }
-    }
+    }*/
 }
