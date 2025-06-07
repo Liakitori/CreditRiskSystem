@@ -17,7 +17,7 @@
 					<DataGridTemplateColumn.CellTemplate>
 						<DataTemplate>
 							<Button Content="Скачать PDF"
-                                    Command="{Binding DataContext.DownloadPdfCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    Command="{Binding DownloadPdfCommand}"
                                     CommandParameter="{Binding Id}"/>
 						</DataTemplate>
 					</DataGridTemplateColumn.CellTemplate>
@@ -26,7 +26,7 @@
 					<DataGridTemplateColumn.CellTemplate>
 						<DataTemplate>
 							<Button Content="Скачать JSON"
-                                    Command="{Binding DataContext.DownloadJsonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    Command="{Binding DownloadJsonCommand}"
                                     CommandParameter="{Binding Id}"/>
 						</DataTemplate>
 					</DataGridTemplateColumn.CellTemplate>
