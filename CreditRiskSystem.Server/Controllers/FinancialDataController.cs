@@ -262,14 +262,14 @@ namespace CreditRiskSystem.Server.Controllers
 
             // Добавление watermark в правом нижнем углу
             string watermark = "Сгенерировано интеллектуальной системой оценки кредитного риска компаний";
-            XFont watermarkFont = new XFont("Verdana", 10, XFontStyle.Italic);
+            XFont watermarkFont = new XFont("Verdana", 15, XFontStyle.Italic);
             XSize watermarkSize = gfx.MeasureString(watermark, watermarkFont);
-            double watermarkX = page.Width - watermarkSize.Width - margin;
-            double watermarkY = page.Height - watermarkSize.Height - margin;
-            // Настройка прозрачности и поворота (45 градусов)
+            double watermarkX = 590;
+            double watermarkY = margin;//page.Height - watermarkSize.Height - margin - 300;
+            // Настройка прозрачности и поворота (90 градусов)
             gfx.Save();
             gfx.TranslateTransform(watermarkX, watermarkY);
-            gfx.RotateTransform(45);
+            gfx.RotateTransform(90);
             XGraphicsState state = gfx.Save();
             gfx.DrawString(watermark, watermarkFont, new XSolidBrush(XColor.FromArgb(128, 0, 0, 0)),
                 new XRect(0, 0, watermarkSize.Width, watermarkSize.Height), XStringFormats.Center);
