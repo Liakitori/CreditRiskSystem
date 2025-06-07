@@ -8,12 +8,14 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="CreditRiskSystem.Client">
-	<StackPanel Margin="20" Spacing="10">
+
+	<ContentControl Content="{Binding CurrentViewModel}"/>
+	
+	<!--StackPanel Margin="20" Spacing="10">
 		<Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}" />
-        <!-- Новые кнопки для скачивания -->
         <Button Content="Скачать PDF" Command="{Binding DownloadPdfCommand}" />
         <Button Content="Скачать JSON" Command="{Binding DownloadJsonCommand}" />
 		<TextBlock Text="Результаты расчета:" />
 		<TextBox Text="{Binding Result}" IsReadOnly="True" TextWrapping="Wrap" MinHeight="200" />
-	</StackPanel>
+	</StackPanel -->
 </Window>

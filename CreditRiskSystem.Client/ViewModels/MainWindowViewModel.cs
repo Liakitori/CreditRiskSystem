@@ -12,9 +12,30 @@ using System.Threading.Tasks;
 
 namespace CreditRiskSystem.Client.ViewModels
 {
-    public class MainWindowViewModel : ReactiveObject
+    public class MainWindowViewModel : ViewModelBase
     {
-        private readonly HttpClient _httpClient;
+        [Reactive] public MainViewModel mainViewModel { get; set; }
+        [Reactive] public ViewModelBase currentViewModel { get; set; }
+        [Reactive] public AuthorizationViewModel authorizationViewMode { get; set; }
+        [Reactive] public HistoryViewModel historyViewModel { get; set; }
+
+        public MainWindowViewModel(HttpClient httpClient, Window parentWindow)
+        {
+            authorizationViewModel = new AuthorizationViewModel();
+            CurrentViewModel = this.authorizationViewModel;
+
+        }
+
+
+
+
+
+
+
+
+
+
+        /*private readonly HttpClient _httpClient;
         private readonly Window _parentWindow;
 
         [Reactive] public string Result { get; set; }
@@ -115,19 +136,19 @@ namespace CreditRiskSystem.Client.ViewModels
                         sb.AppendLine($"Коэффициент обеспеченности собственными средствами (П7): {riskResult.П7:F2}");
                         sb.AppendLine($"Коэффициент обеспеченности обязательств активами (П8): {riskResult.П8:F2}");
 
-                        /*Result = $"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})\n" +
+                        *//*Result = $"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})\n" +
                                  $"Springate: {riskResult.SpringateScore:F2} ({riskResult.SpringateRiskLevel})\n" +
                                  $"Fulmer: {riskResult.FulmerScore:F2} ({riskResult.FulmerRiskLevel})\n" +
                                  $"Ohlson O-score: {riskResult.OhlsonOScore:F2} (Вероятность: {riskResult.OhlsonProbability:F2})\n" +
                                  $"Zmijewski: {riskResult.ZmijewskiScore:F2} (Вероятность: {riskResult.ZmijewskiProbability:F2})\n" +
-                                 $"Общая оценка кредитного риска: {riskResult.OverallRiskAssessment}";*/
+                                 $"Общая оценка кредитного риска: {riskResult.OverallRiskAssessment}";*//*
                         Result = sb.ToString();
                     }
                     else
                     {
                         var errorContent = await response.Content.ReadAsStringAsync();
                         Result = $"Ошибка сервера: {response.ReasonPhrase}\nДетали: {errorContent}";
-                        /*Result = $"Ошибка: {response.ReasonPhrase}";*/
+                        *//*Result = $"Ошибка: {response.ReasonPhrase}";*//*
                     }
                 }
                 catch (Exception ex)
@@ -203,6 +224,6 @@ namespace CreditRiskSystem.Client.ViewModels
             {
                 Result = $"Ошибка при скачивании JSON: {ex.Message}";
             }
-        }
+        }*/
     }
 }
