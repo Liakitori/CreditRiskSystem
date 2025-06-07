@@ -1,62 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Reactive;
-using System.Text;
-using System.Threading.Tasks;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using CreditRiskSystem.Client.Interfaces;
+using CreditRiskSystem.Client.Services;
 using CreditRiskSystem.Common.Models;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reactive;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace CreditRiskSystem.Client.ViewModels;
-
-public class MainViewModel : ViewModelBase
+namespace CreditRiskSystem.Client.ViewModels
 {
-    private readonly HttpClient _httpClient;
-    private readonly IDialogService _dialogService;
-
-    [Reactive] public string Result { get; set; }
-
-    public ReactiveCommand<Unit, Unit> UploadFileCommand { get; }
-    public ReactiveCommand<Unit, Unit> DownloadPdfCommand { get; }
-    public ReactiveCommand<Unit, Unit> DownloadJsonCommand { get; }
-
-    public MainViewModel(HttpClient httpClient, IDialogService dialogService)
+    public class MainViewModel : ViewModelBase
     {
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+        private readonly IApiService _apiService;
+        private readonly IDialogService _dialogService;
+        private readonly INavigationService _navigationService;
 
-        UploadFileCommand = ReactiveCommand.CreateFromTask(UploadFileAsync);
-        DownloadPdfCommand = ReactiveCommand.CreateFromTask(DownloadPdfAsync);
-        DownloadJsonCommand = ReactiveCommand.CreateFromTask(DownloadJsonAsync);
-    }
+        [Reactive] public string Result { get; set; }
+        [Reactive] public Guid? CurrentCalculationId { get; set; }
 
-    private async Task UploadFileAsync()
-    {
-        var filters = new List<(string Name, List<string> Extensions)>
+        public ReactiveCommand<Unit, Unit> UploadFileCommand { get; }
+        public ReactiveCommand<Unit, Unit> DownloadPdfCommand { get; }
+        public ReactiveCommand<Unit, Unit> DownloadJsonCommand { get; }
+        public ReactiveCommand<Unit, Unit> GoToHistoryCommand { get; }
+        public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
+
+        public MainViewModel(IApiService apiService, IDialogService dialogService, INavigationService navigationService)
         {
-            ("Excel", new List<string> { "xlsx" })
-        };
+            _apiService = apiService;
+            _dialogService = dialogService;
+            _navigationService = navigationService;
 
-        var result = await _dialogService.ShowOpenFileDialogAsync("Выберите файл Excel", filters);
-        if (result is { Length: > 0 })
+            UploadFileCommand = ReactiveCommand.CreateFromTask(UploadFileAsync);
+            DownloadPdfCommand = ReactiveCommand.CreateFromTask(DownloadPdfAsync);
+            DownloadJsonCommand = ReactiveCommand.CreateFromTask(DownloadJsonAsync);
+            GoToHistoryCommand = ReactiveCommand.CreateFromTask(() => _navigationService.NavigateTo<HistoryViewModel>());
+            LogoutCommand = ReactiveCommand.CreateFromTask(LogoutAsync);
+        }
+
+        private async Task UploadFileAsync()
         {
-            try
+            var filters = new List<(string Name, List<string> Extensions)> { ("Excel", new List<string> { "xlsx" }) };
+            var result = await _dialogService.ShowOpenFileDialogAsync("Выберите файл Excel", filters);
+            if (result?.Length > 0)
             {
-                var filePath = result[0];
-                await using var stream = File.OpenRead(filePath);
-                var content = new MultipartFormDataContent();
-                content.Add(new StreamContent(stream), "file", Path.GetFileName(filePath));
-
-                var response = await _httpClient.PostAsync("api/FinancialData/upload", content);
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    var riskResult = await response.Content.ReadFromJsonAsync<RiskAssessmentResult>();
+                    var filePath = result[0];
+                    var riskResult = await _apiService.UploadFileAsync(filePath);
+                    CurrentCalculationId = riskResult.Id;
+
                     var sb = new StringBuilder();
 
                     // Модели кредитного риска
@@ -118,85 +115,65 @@ public class MainViewModel : ViewModelBase
                     sb.AppendLine($"Коэффициент обеспеченности собственными средствами (П7): {riskResult.П7:F2}");
                     sb.AppendLine($"Коэффициент обеспеченности обязательств активами (П8): {riskResult.П8:F2}");
 
-                    /*Result = $"Altman Z-score: {riskResult.AltmanZScore:F2} ({riskResult.AltmanRiskLevel})\n" +
-                             $"Springate: {riskResult.SpringateScore:F2} ({riskResult.SpringateRiskLevel})\n" +
-                             $"Fulmer: {riskResult.FulmerScore:F2} ({riskResult.FulmerRiskLevel})\n" +
-                             $"Ohlson O-score: {riskResult.OhlsonOScore:F2} (Вероятность: {riskResult.OhlsonProbability:F2})\n" +
-                             $"Zmijewski: {riskResult.ZmijewskiScore:F2} (Вероятность: {riskResult.ZmijewskiProbability:F2})\n" +
-                             $"Общая оценка кредитного риска: {riskResult.OverallRiskAssessment}"; */
                     Result = sb.ToString();
                 }
-                else
+                catch (Exception ex)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка сервера: {response.ReasonPhrase}\nДетали: {errorContent}");
+                    await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка при обработке файла: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task DownloadPdfAsync()
+        {
+            if (CurrentCalculationId == null)
+            {
+                await _dialogService.ShowMessageAsync("Ошибка", "Сначала выполните расчёт.");
+                return;
+            }
+            try
+            {
+                var stream = await _apiService.DownloadPdfAsync(CurrentCalculationId.Value);
+                var path = await _dialogService.ShowSaveFileDialogAsync("Сохранить PDF", $"result_{CurrentCalculationId}.pdf", new List<(string Name, List<string> Extensions)> { ("PDF файлы", new List<string> { "pdf" }) });
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    using var fileStream = File.Create(path);
+                    await stream.CopyToAsync(fileStream);
                 }
             }
             catch (Exception ex)
             {
-                await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка при обработке файла: {ex.Message}");
+                await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка при скачивании PDF: {ex.Message}");
             }
         }
-    }
 
-    private async Task DownloadPdfAsync()
-    {
-        try
+        private async Task DownloadJsonAsync()
         {
-            var response = await _httpClient.GetAsync("api/FinancialData/download/pdf");
-            if (response.IsSuccessStatusCode)
+            if (CurrentCalculationId == null)
             {
-                var filters = new List<(string Name, List<string> Extensions)>
-                {
-                    ("PDF файлы", new List<string> { "pdf" })
-                };
-
-                var path = await _dialogService.ShowSaveFileDialogAsync("Сохранить PDF", "result.pdf", filters);
+                await _dialogService.ShowMessageAsync("Ошибка", "Сначала выполните расчёт.");
+                return;
+            }
+            try
+            {
+                var stream = await _apiService.DownloadJsonAsync(CurrentCalculationId.Value);
+                var path = await _dialogService.ShowSaveFileDialogAsync("Сохранить JSON", $"result_{CurrentCalculationId}.json", new List<(string Name, List<string> Extensions)> { ("JSON файлы", new List<string> { "json" }) });
                 if (!string.IsNullOrWhiteSpace(path))
                 {
                     using var fileStream = File.Create(path);
-                    await response.Content.CopyToAsync(fileStream);
+                    await stream.CopyToAsync(fileStream);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка: {response.ReasonPhrase}");
+                await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка при скачивании JSON: {ex.Message}");
             }
         }
-        catch (Exception ex)
-        {
-            await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка при скачивании PDF: {ex.Message}");
-        }
-    }
 
-    private async Task DownloadJsonAsync()
-    {
-        try
+        private async Task LogoutAsync()
         {
-            var response = await _httpClient.GetAsync("api/FinancialData/download/json");
-            if (response.IsSuccessStatusCode)
-            {
-                var filters = new List<(string Name, List<string> Extensions)>
-                {
-                    ("JSON файлы", new List<string> { "json" })
-                };
-
-                var path = await _dialogService.ShowSaveFileDialogAsync("Сохранить JSON", "result.json", filters);
-                if (!string.IsNullOrWhiteSpace(path))
-                {
-                    using var fileStream = File.Create(path);
-                    await response.Content.CopyToAsync(fileStream);
-                }
-            }
-            else
-            {
-                await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка: {response.ReasonPhrase}");
-            }
-        }
-        catch (Exception ex)
-        {
-            await _dialogService.ShowMessageAsync("Ошибка", $"Ошибка при скачивании JSON: {ex.Message}");
+            _apiService.SetToken(null);
+            await _navigationService.NavigateTo<AuthorizationViewModel>();
         }
     }
 }
-

@@ -6,5 +6,32 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="CreditRiskSystem.Client.Views.HistoryView"
              x:DataType="vm:HistoryViewModel">
-    История
+	<StackPanel Margin="20" Spacing="10">
+		<TextBlock Text="История расчетов" FontSize="20" HorizontalAlignment="Center"/>
+		<DataGrid ItemsSource="{Binding Calculations}" AutoGenerateColumns="False">
+			<DataGrid.Columns>
+				<DataGridTextColumn Header="ID" Binding="{Binding Id}"/>
+				<DataGridTextColumn Header="Дата создания" Binding="{Binding CreatedAt, StringFormat='dd.MM.yyyy HH:mm'}"/>
+				<DataGridTextColumn Header="Общий риск" Binding="{Binding OverallRisk}"/>
+				<DataGridTemplateColumn Header="PDF">
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<Button Content="Скачать PDF"
+                                    Command="{Binding DataContext.DownloadPdfCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding Id}"/>
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+				</DataGridTemplateColumn>
+				<DataGridTemplateColumn Header="JSON">
+					<DataGridTemplateColumn.CellTemplate>
+						<DataTemplate>
+							<Button Content="Скачать JSON"
+                                    Command="{Binding DataContext.DownloadJsonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding Id}"/>
+						</DataTemplate>
+					</DataGridTemplateColumn.CellTemplate>
+				</DataGridTemplateColumn>
+			</DataGrid.Columns>
+		</DataGrid>
+	</StackPanel>
 </UserControl>

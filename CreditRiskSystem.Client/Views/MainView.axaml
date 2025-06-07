@@ -6,10 +6,12 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="CreditRiskSystem.Client.Views.MainView"
              x:DataType="vm:MainViewModel">
-    <StackPanel Margin="20" Spacing="10">
+	<StackPanel Margin="20" Spacing="10">
 		<Button Content="Загрузить файл Excel" Command="{Binding UploadFileCommand}" />
-        <Button Content="Скачать PDF" Command="{Binding DownloadPdfCommand}" />
-        <Button Content="Скачать JSON" Command="{Binding DownloadJsonCommand}" />
+		<Button Content="Скачать PDF" Command="{Binding DownloadPdfCommand}" />
+		<Button Content="Скачать JSON" Command="{Binding DownloadJsonCommand}" />
+		<Button Content="История" Command="{Binding GoToHistoryCommand}" />
+		<Button Content="Выйти" Command="{Binding LogoutCommand}" />
 		<TextBlock Text="Результаты расчета:" />
 		<TextBox Text="{Binding Result}" IsReadOnly="True" TextWrapping="Wrap" MinHeight="200" />
 	</StackPanel>

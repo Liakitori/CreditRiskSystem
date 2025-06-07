@@ -30,6 +30,7 @@ public static class ServiceProvider
         });
 
         // Регистрация сервисов
+        services.AddSingleton<IApiService, ApiService>();
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<IDialogService>(provider => 
@@ -60,9 +61,10 @@ public static class ServiceProvider
                 {
                     sc.AddSingleton(t, provider =>
                     {
-                        var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("ServerApi");
+                        var httpClient = provider.GetRequiredService<IApiService>();
                         var dialogService = provider.GetRequiredService<IDialogService>();
-                        return new MainViewModel(httpClient, dialogService);
+                        var navigationService = provider.GetRequiredService<INavigationService>();
+                        return new MainViewModel(httpClient, dialogService, navigationService);
                     });
                 }
                 else

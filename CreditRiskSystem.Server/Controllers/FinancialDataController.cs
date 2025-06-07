@@ -1,4 +1,7 @@
 ﻿using ClosedXML.Excel;
+using CreditRiskSystem.Common.Models;
+using CreditRiskSystem.Server.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PdfSharpCore.Drawing;
@@ -7,11 +10,10 @@ using PdfSharpCore.Pdf.Security;
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using CreditRiskSystem.Common.Models;
-using CreditRiskSystem.Server.Data;
 
 namespace CreditRiskSystem.Server.Controllers
 {
@@ -27,25 +29,21 @@ namespace CreditRiskSystem.Server.Controllers
         }
 
         [HttpPost("upload")]
+        [Authorize]
         public async Task<ActionResult<RiskAssessmentResult>> UploadFile(IFormFile file)
         {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("Файл не загружен.");
-            }
+            if (file == null || file.Length == 0) return BadRequest("Файл не загружен.");
 
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             using var stream = file.OpenReadStream();
             using var workbook = new XLWorkbook(stream);
 
-            // Извлечение данных из файла
             var financialData = ExtractFinancialData(workbook);
-
-            // Расчет кредитного риска
             var result = CalculateRiskAssessment(financialData);
 
-            // Сохранение данных
             financialData.Id = Guid.NewGuid();
             financialData.CreatedAt = DateTime.UtcNow;
+            financialData.UserId = userId;
             result.Id = Guid.NewGuid();
             result.FinancialDataId = financialData.Id;
             result.CalculatedAt = DateTime.UtcNow;
@@ -59,47 +57,95 @@ namespace CreditRiskSystem.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<FinancialData>> GetFinancialData(Guid id)
         {
-            var financialData = await _context.FinancialData.FindAsync(id);
-            if (financialData == null)
-            {
-                return NotFound();
-            }
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var financialData = await _context.FinancialData
+                .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
+            if (financialData == null) return NotFound();
             return financialData;
         }
 
-        /// <summary>
-        /// Эндпоинт для скачивания результата в формате PDF.
-        /// Отчёт включает показатели моделей и разделы: Рентабельность, Деловая активность,
-        /// Финансовая устойчивость и Платёжеспособность. В верхней части страницы выводится номер отчёта и его ID.
-        /// Также устанавливается watermark и настройки безопасности, чтобы PDF нельзя было редактировать.
-        /// Реализована простая пагинация.
-        /// </summary>
-        [HttpGet("download/pdf")]
-        public async Task<IActionResult> DownloadPdf()
+        [HttpGet("history")]
+        [Authorize]
+        public async Task<ActionResult<List<RiskAssessmentResult>>> GetHistory()
         {
-            var result = await _context.RiskAssessmentResults
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var results = await _context.RiskAssessmentResults
+                .Include(r => r.FinancialData)
+                .Where(r => r.FinancialData.UserId == userId)
                 .OrderByDescending(r => r.CalculatedAt)
-                .FirstOrDefaultAsync();
+                .ToListAsync();
+            return results;
+        }
 
-            if (result == null)
-            {
-                return NotFound("Результат оценки не найден.");
-            }
+        [HttpGet("download/pdf/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DownloadPdf(Guid id)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var result = await _context.RiskAssessmentResults
+                .Include(r => r.FinancialData)
+                .FirstOrDefaultAsync(r => r.Id == id && r.FinancialData.UserId == userId);
+            if (result == null) return NotFound("Результат не найден или доступ запрещён.");
 
-            // Создание PDF документа
+            var sb = new StringBuilder();
+            sb.AppendLine($"Отчет № {result.Id}");
+            sb.AppendLine($"Дата создания: {result.CalculatedAt:dd.MM.yyyy HH:mm}");
+            sb.AppendLine();
+            sb.AppendLine("=== Модели кредитного риска ===");
+            sb.AppendLine($"Altman Z-score: {result.AltmanZScore:F2} ({result.AltmanRiskLevel})");
+            sb.AppendLine($"Springate: {result.SpringateScore:F2} ({result.SpringateRiskLevel})");
+            sb.AppendLine($"Fulmer: {result.FulmerScore:F2} ({result.FulmerRiskLevel})");
+            sb.AppendLine($"Ohlson O-score: {result.OhlsonOScore:F2} (Вероятность: {result.OhlsonProbability:F2})");
+            sb.AppendLine($"Zmijewski: {result.ZmijewskiScore:F2} (Вероятность: {result.ZmijewskiProbability:F2})");
+            sb.AppendLine($"Общая оценка кредитного риска: {result.OverallRiskAssessment}");
+            sb.AppendLine();
+            sb.AppendLine("=== Рентабельность ===");
+            sb.AppendLine($"Рентабельность объема продаж (Р1): {result.Р1:F2}%");
+            sb.AppendLine($"Бухгалтерская рентабельность (Р2): {result.Р2:F2}%");
+            sb.AppendLine($"Чистая рентабельность (Р3): {result.Р3:F2}%");
+            sb.AppendLine($"Экономическая рентабельность (Р4): {result.Р4:F2}%");
+            sb.AppendLine($"Рентабельность собственного капитала (Р5): {result.Р5:F2}%");
+            sb.AppendLine($"Валовая рентабельность (Р6): {result.Р6:F2}%");
+            sb.AppendLine($"Рентабельность реализованной продукции (Р7): {result.Р7:F2}%");
+            sb.AppendLine();
+            sb.AppendLine("=== Деловая активность ===");
+            sb.AppendLine($"Общая оборачиваемость капитала (ДА1): {result.ДА1:F2} оборотов");
+            sb.AppendLine($"Оборачиваемость оборотных средств (ДА2): {result.ДА2:F2} оборотов");
+            sb.AppendLine($"Отдача нематериальных активов (ДА3): {result.ДА3:F2} оборотов");
+            sb.AppendLine($"Фондоотдача (ДА4): {result.ДА4:F2} оборотов");
+            sb.AppendLine($"Отдача собственного капитала (ДА5): {result.ДА5:F2} оборотов");
+            sb.AppendLine($"Оборачиваемость средств в расчетах (ДА6): {result.ДА6:F2} оборотов");
+            sb.AppendLine($"Оборачиваемость кредиторской задолженности (ДА7): {result.ДА7:F2} оборотов");
+            sb.AppendLine($"Оборачиваемость материальных средств (ДА8): {result.ДА8:F2} дней");
+            sb.AppendLine($"Оборачиваемость денежных средств (ДА9): {result.ДА9:F2} дней");
+            sb.AppendLine($"Срок погашения дебиторской задолженности (ДА10): {result.ДА10:F2} дней");
+            sb.AppendLine($"Срок погашения кредиторской задолженности (ДА11): {result.ДА11:F2} дней");
+            sb.AppendLine();
+            sb.AppendLine("=== Финансовая устойчивость ===");
+            sb.AppendLine($"Коэффициент капитализации (ФУ1): {result.ФУ1:F2}");
+            sb.AppendLine($"Собственный капитал в обороте (ФУ2): {result.ФУ2:F2} тыс. руб.");
+            sb.AppendLine($"Обеспеченность запасов собственными источниками (ФУ3): {result.ФУ3:F2}");
+            sb.AppendLine($"Коэффициент автономии (ФУ4): {result.ФУ4:F2}");
+            sb.AppendLine($"Коэффициент финансирования (ФУ5): {result.ФУ5:F2}");
+            sb.AppendLine($"Коэффициент финансовой устойчивости (ФУ6): {result.ФУ6:F2}");
+            sb.AppendLine($"Коэффициент маневренности (ФУ7): {result.ФУ7:F2}");
+            sb.AppendLine($"Коэффициент мобилизации (ФУ8): {result.ФУ8:F2}");
+            sb.AppendLine();
+            sb.AppendLine("=== Платёжеспособность ===");
+            sb.AppendLine($"Общий показатель платежеспособности (П1): {result.П1:F2}");
+            sb.AppendLine($"Коэффициент абсолютной ликвидности (П2): {result.П2:F2}");
+            sb.AppendLine($"Коэффициент быстрой ликвидности (П3): {result.П3:F2}");
+            sb.AppendLine($"Коэффициент текущей ликвидности (П4): {result.П4:F2}");
+            sb.AppendLine($"Коэффициент маневренности функционирующего капитала (П5): {result.П5:F2}");
+            sb.AppendLine($"Доля оборотных средств в активах (П6): {result.П6:F2}");
+            sb.AppendLine($"Коэффициент обеспеченности собственными средствами (П7): {result.П7:F2}");
+            sb.AppendLine($"Коэффициент обеспеченности обязательств активами (П8): {result.П8:F2}");
+
             PdfDocument document = new PdfDocument();
             document.Info.Title = "Результат оценки кредитного риска";
-
-            // Настройки безопасности (запрет редактирования)
-            document.SecuritySettings.OwnerPassword = "OwnerSecret@123"; // замените на надёжный пароль
-            document.SecuritySettings.PermitAccessibilityExtractContent = false;
-            document.SecuritySettings.PermitAnnotations = false;
-            document.SecuritySettings.PermitAssembleDocument = false;
-            document.SecuritySettings.PermitExtractContent = false;
-            document.SecuritySettings.PermitFormsFill = false;
-            document.SecuritySettings.PermitModifyDocument = false;
             document.SecuritySettings.PermitPrint = true;
 
             PdfPage page = document.AddPage();
@@ -109,159 +155,66 @@ namespace CreditRiskSystem.Server.Controllers
             XFont textFont = new XFont("Verdana", 12, XFontStyle.Regular);
             double margin = 40;
             double yPoint = margin;
-            double spacingHeader = 60;
-            double spacingSection = 30;
-            double spacingText = 25;
+            double spacingHeader = 30;
+            double spacingSection = 20;
+            double spacingText = 15;
 
-            // Список элементов отчёта (текст, шрифт и высота строки)
-            var items = new (string Text, XFont Font, double Spacing)[]
+            var lines = sb.ToString().Split('\n');
+            foreach (var line in lines)
             {
-        ($"Отчет № {result.Id}", headerFont, spacingHeader),
-        ("=== Модели кредитного риска ===", sectionFont, spacingSection),
-        ($"Altman Z-score: {result.AltmanZScore:F2} ({result.AltmanRiskLevel})", textFont, spacingText),
-        ($"Springate: {result.SpringateScore:F2} ({result.SpringateRiskLevel})", textFont, spacingText),
-        ($"Fulmer: {result.FulmerScore:F2} ({result.FulmerRiskLevel})", textFont, spacingText),
-        ($"Ohlson O-score: {result.OhlsonOScore:F2} (Вероятность: {result.OhlsonProbability:F2})", textFont, spacingText),
-        ($"Zmijewski: {result.ZmijewskiScore:F2} (Вероятность: {result.ZmijewskiProbability:F2})", textFont, spacingText),
-        ($"Общая оценка кредитного риска: {result.OverallRiskAssessment}", textFont, spacingText),
-        ("=== Рентабельность ===", sectionFont, spacingSection),
-        ($"Рентабельность объема продаж (Р1): {result.Р1:F2}%", textFont, spacingText),
-        ($"Бухгалтерская рентабельность (Р2): {result.Р2:F2}%", textFont, spacingText),
-        ($"Чистая рентабельность (Р3): {result.Р3:F2}%", textFont, spacingText),
-        ($"Экономическая рентабельность (Р4): {result.Р4:F2}%", textFont, spacingText),
-        ($"Рентабельность собственного капитала (Р5): {result.Р5:F2}%", textFont, spacingText),
-        ($"Валовая рентабельность (Р6): {result.Р6:F2}%", textFont, spacingText),
-        ($"Рентабельность реализованной продукции (Р7): {result.Р7:F2}%", textFont, spacingText),
-        ("=== Деловая активность ===", sectionFont, spacingSection),
-        ($"Общая оборачиваемость капитала (ДА1): {result.ДА1:F2} оборотов", textFont, spacingText),
-        ($"Оборачиваемость оборотных средств (ДА2): {result.ДА2:F2} оборотов", textFont, spacingText),
-        ($"Отдача нематериальных активов (ДА3): {result.ДА3:F2} оборотов", textFont, spacingText),
-        ($"Фондоотдача (ДА4): {result.ДА4:F2} оборотов", textFont, spacingText),
-        ($"Отдача собственного капитала (ДА5): {result.ДА5:F2} оборотов", textFont, spacingText),
-        ($"Оборачиваемость средств в расчетах (ДА6): {result.ДА6:F2} оборотов", textFont, spacingText),
-        ($"Оборачиваемость кредиторской задолженности (ДА7): {result.ДА7:F2} оборотов", textFont, spacingText),
-        ($"Оборачиваемость материальных средств (ДА8): {result.ДА8:F2} дней", textFont, spacingText),
-        ($"Оборачиваемость денежных средств (ДА9): {result.ДА9:F2} дней", textFont, spacingText),
-        ($"Срок погашения дебиторской задолженности (ДА10): {result.ДА10:F2} дней", textFont, spacingText),
-        ($"Срок погашения кредиторской задолженности (ДА11): {result.ДА11:F2} дней", textFont, spacingText),
-        ("=== Финансовая устойчивость ===", sectionFont, spacingSection),
-        ($"Коэффициент капитализации (ФУ1): {result.ФУ1:F2}", textFont, spacingText),
-        ($"Собственный капитал в обороте (ФУ2): {result.ФУ2:F2} тыс. руб.", textFont, spacingText),
-        ($"Обеспеченность запасов (ФУ3): {result.ФУ3:F2}", textFont, spacingText),
-        ($"Коэффициент автономии (ФУ4): {result.ФУ4:F2}", textFont, spacingText),
-        ($"Коэффициент финансирования (ФУ5): {result.ФУ5:F2}", textFont, spacingText),
-        ($"Коэффициент финансовой устойчивости (ФУ6): {result.ФУ6:F2}", textFont, spacingText),
-        ($"Коэффициент маневренности (ФУ7): {result.ФУ7:F2}", textFont, spacingText),
-        ($"Коэффициент мобилизации (ФУ8): {result.ФУ8:F2}", textFont, spacingText),
-        ("=== Платёжеспособность ===", sectionFont, spacingSection),
-        ($"Общий показатель платежеспособности (П1): {result.П1:F2}", textFont, spacingText),
-        ($"Коэффициент абсолютной ликвидности (П2): {result.П2:F2}", textFont, spacingText),
-        ($"Коэффициент быстрой ликвидности (П3): {result.П3:F2}", textFont, spacingText),
-        ($"Коэффициент текущей ликвидности (П4): {result.П4:F2}", textFont, spacingText),
-        ($"Коэффициент маневренности (П5): {result.П5:F2}", textFont, spacingText),
-        ($"Доля оборотных средств (П6): {result.П6:F2}", textFont, spacingText),
-        ($"Обеспеченность собственными (П7): {result.П7:F2}", textFont, spacingText),
-        ($"Обеспеченность обязательствами (П8): {result.П8:F2}", textFont, spacingHeader)
-            };
+                XFont font = line.StartsWith("Отчет №") ? headerFont :
+                             line.StartsWith("===") ? sectionFont : textFont;
+                double spacing = line.StartsWith("Отчет №") ? spacingHeader :
+                                 line.StartsWith("===") ? spacingSection : spacingText;
 
-            // Функция для проверки места на странице и создания новой, если требуется
-            void EnsurePageSpace(double requiredHeight)
-            {
-                if (yPoint + requiredHeight > page.Height - margin)
+                if (yPoint + spacing > page.Height - margin)
                 {
                     page = document.AddPage();
                     gfx = XGraphics.FromPdfPage(page);
                     yPoint = margin;
                 }
-            }
 
-            // Вспомогательная функция для отрисовки одной строки
-            void DrawItem(string text, XFont font, double spacing)
-            {
-                EnsurePageSpace(spacing);
-                gfx.DrawString(text, font, XBrushes.Black,
+                gfx.DrawString(line.TrimEnd(), font, XBrushes.Black,
                     new XRect(margin, yPoint, page.Width - 2 * margin, spacing), XStringFormats.TopLeft);
                 yPoint += spacing;
             }
 
-            // Отрисовка watermark в начале заполнения PDF
-            {
-                string watermark = "Сгенерировано интеллектуальной системой оценки кредитного риска компаний";
-                XFont watermarkFont = new XFont("Verdana", 15, XFontStyle.Italic);
-                XSize watermarkSize = gfx.MeasureString(watermark, watermarkFont);
-                double watermarkX = 590;
-                double watermarkY = margin;
-                gfx.Save();
-                gfx.TranslateTransform(watermarkX, watermarkY);
-                gfx.RotateTransform(90);
-                XGraphicsState state = gfx.Save();
-                gfx.DrawString(watermark, watermarkFont, new XSolidBrush(XColor.FromArgb(128, 0, 0, 0)),
-                    new XRect(0, 0, watermarkSize.Width, watermarkSize.Height), XStringFormats.Center);
-                gfx.Restore(state);
-                gfx.Restore();
-            }
-
-            // Отрисовка всех элементов отчёта
-            foreach (var item in items)
-            {
-                DrawItem(item.Text, item.Font, item.Spacing);
-            }
-
-            // Отрисовка watermark в конце заполнения PDF
-            {
-                string watermark = "Сгенерировано интеллектуальной системой оценки кредитного риска компаний";
-                XFont watermarkFont = new XFont("Verdana", 15, XFontStyle.Italic);
-                XSize watermarkSize = gfx.MeasureString(watermark, watermarkFont);
-                double watermarkX = 590;
-                double watermarkY = margin; // page.Height - watermarkSize.Height - margin - 300;
-                gfx.Save();
-                gfx.TranslateTransform(watermarkX, watermarkY);
-                gfx.RotateTransform(90);
-                XGraphicsState state = gfx.Save();
-                gfx.DrawString(watermark, watermarkFont, new XSolidBrush(XColor.FromArgb(128, 0, 0, 0)),
-                    new XRect(0, 0, watermarkSize.Width, watermarkSize.Height), XStringFormats.Center);
-                gfx.Restore(state);
-                gfx.Restore();
-            }
+            string watermark = "Сгенерировано системой CreditRiskSystem";
+            XFont watermarkFont = new XFont("Verdana", 15, XFontStyle.Italic);
+            XSize watermarkSize = gfx.MeasureString(watermark, watermarkFont);
+            double watermarkX = page.Width - margin - 20;
+            double watermarkY = margin;
+            gfx.Save();
+            gfx.TranslateTransform(watermarkX, watermarkY);
+            gfx.RotateTransform(90);
+            gfx.DrawString(watermark, watermarkFont, new XSolidBrush(XColor.FromArgb(128, 0, 0, 0)),
+                new XRect(0, 0, watermarkSize.Width, watermarkSize.Height), XStringFormats.Center);
+            gfx.Restore();
 
             using MemoryStream ms = new MemoryStream();
             document.Save(ms, false);
-            return File(ms.ToArray(), "application/pdf", "result.pdf");
+            return File(ms.ToArray(), "application/pdf", $"result_{id}.pdf");
         }
 
-        /// <summary>
-        /// Эндпоинт для скачивания результата в формате JSON.
-        /// Возвращается последний результат оценки, отсортированный по дате расчёта.
-        /// </summary>
-        [HttpGet("download/json")]
-        public async Task<IActionResult> DownloadJson()
+        [HttpGet("download/json/{id}")]
+        [Authorize]
+        public async Task<IActionResult> DownloadJson(Guid id)
         {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var result = await _context.RiskAssessmentResults
-                .OrderByDescending(r => r.CalculatedAt)
-                .FirstOrDefaultAsync();
-
-            if (result == null)
-            {
-                return NotFound("Результат оценки не найден.");
-            }
+                .Include(r => r.FinancialData)
+                .FirstOrDefaultAsync(r => r.Id == id && r.FinancialData.UserId == userId);
+            if (result == null) return NotFound("Результат не найден или доступ запрещён.");
 
             var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
             var jsonBytes = Encoding.UTF8.GetBytes(json);
-            return File(jsonBytes, "application/json", "result.json");
+            return File(jsonBytes, "application/json", $"result_{id}.json");
         }
 
         private FinancialData ExtractFinancialData(XLWorkbook workbook)
         {
             var financialData = new FinancialData();
 
-            // Выводим имена всех листов для отладки
-            Console.WriteLine("Available worksheets:");
-            foreach (var sheet in workbook.Worksheets)
-            {
-                Console.WriteLine($" - {sheet.Name}");
-            }
-
-            // Бухгалтерский баланс
             var balanceSheet = workbook.Worksheets.FirstOrDefault(ws => ws.Name.Equals("Бухгалтерский баланс", StringComparison.OrdinalIgnoreCase))
                 ?? throw new InvalidOperationException("Лист 'Бухгалтерский баланс' не найден.");
             financialData.Код1100 = GetValueFromCell(balanceSheet, "1100");
@@ -286,7 +239,6 @@ namespace CreditRiskSystem.Server.Controllers
             financialData.Код1600 = GetValueFromCell(balanceSheet, "1600");
             financialData.Код1700 = GetValueFromCell(balanceSheet, "1700");
 
-            // Отчет о финансовых результатах
             var incomeStatement = workbook.Worksheets.FirstOrDefault(ws => ws.Name.Equals("Отчет о финансовых результатах", StringComparison.OrdinalIgnoreCase))
                 ?? throw new InvalidOperationException("Лист 'Отчет о финансовых результатах' не найден.");
             financialData.Код2100 = GetValueFromCell(incomeStatement, "2100");
@@ -305,27 +257,24 @@ namespace CreditRiskSystem.Server.Controllers
 
         private double GetValueFromCell(IXLWorksheet worksheet, string code)
         {
-            // Определяем диапазон столбцов для кодов в зависимости от листа
             int codeStartColumn, codeEndColumn, valueColumn;
             if (worksheet.Name.Equals("Бухгалтерский баланс", StringComparison.OrdinalIgnoreCase))
             {
-                codeStartColumn = 14; // Столбец N
-                codeEndColumn = 17;   // Столбец Q
-                valueColumn = 18;     // Столбец R (первая ячейка диапазона R-X)
+                codeStartColumn = 14;
+                codeEndColumn = 17;
+                valueColumn = 18;
             }
             else if (worksheet.Name.Equals("Отчет о финансовых результатах", StringComparison.OrdinalIgnoreCase))
             {
-                codeStartColumn = 17; // Столбец Q
-                codeEndColumn = 22;   // Столбец V
-                valueColumn = 23;     // Столбец W (первая ячейка диапазона W-AC)
+                codeStartColumn = 17;
+                codeEndColumn = 22;
+                valueColumn = 23;
             }
             else
             {
-                Console.WriteLine($"Unknown worksheet: {worksheet.Name}");
                 return 0;
             }
 
-            // Ищем ячейку с кодом строки в диапазоне столбцов
             var cell = worksheet.CellsUsed()
                 .FirstOrDefault(c =>
                 {
@@ -334,81 +283,26 @@ namespace CreditRiskSystem.Server.Controllers
                            c.Value.ToString().Trim().Equals(code, StringComparison.OrdinalIgnoreCase);
                 });
 
-            //ВОЗМОЖНО КОГДА-ТО ПОНАДОБИТСЯ ТАКОЙ ВАРИАНТ
-            /*// Ищем ячейку с кодом строки в диапазоне столбцов, начиная с 9-й строки
-            var cell = worksheet.RowsUsed(r => r.RowNumber() >= 9)
-                .SelectMany(r => r.CellsUsed())
-                .FirstOrDefault(c =>
-                {
-                    var colNum = c.WorksheetColumn().ColumnNumber();
-                    return colNum >= codeStartColumn && colNum <= codeEndColumn &&
-                           c.Value.ToString().Trim().Equals(code, StringComparison.OrdinalIgnoreCase);
-                });*/
-
-
             if (cell != null)
             {
-                // Извлекаем значение из столбца valueColumn в той же строке
                 var valueCell = cell.WorksheetRow().Cell(valueColumn);
                 var rawValue = valueCell.Value.ToString().Trim();
-
-                Console.WriteLine($"Found cell for code {code} at {cell.Address}, raw value in {valueCell.Address}: {rawValue}");
-
-                // Обрабатываем возможные форматы чисел
-                string cleanedValue = rawValue
-                    .Replace(",", ".") // Заменяем запятые на точки
-                    .Replace(" ", "") // Удаляем пробелы, например 23 208 -> 23208
-                    .Replace(",", ".") // Заменяем запятые на точки
-                    .Replace(" ", ""); // Удаляем пробелы
-
-
-                //РАСКОММЕНТИТЬ ТОЛЬКО ЕСЛИ НАДО СДЕЛАТЬ КАКИЕ-ТО КОДЫ СО ЗНАКОМ МИНУС, НО ЛУЧШЕ МЕНЯТЬ ЗНАК В САМИХ РАСЧЕТАХ
-                /*// Для Код2330 убираем скобки, но не добавляем минус
-                if (code.Equals("2330", StringComparison.OrdinalIgnoreCase))
-                {
-                    cleanedValue = cleanedValue.Replace("(", "").Replace(")", "");
-                }
-                else
-                {
-                    // Для остальных кодов скобки означают отрицательное значение
-                    cleanedValue = cleanedValue.Replace("(", "-").Replace(")", "");
-                }
-                // Для Код2330, Код2120, Код2210, Код2220, Код2350 убираем скобки, но не добавляем минус
-                if (new[] { "2330", "2120", "2210", "2220", "2350" }.Contains(code, StringComparer.OrdinalIgnoreCase))
-                {
-                    cleanedValue = cleanedValue.Replace("(", "").Replace(")", "");
-                }
-                else
-                {
-                    // Для остальных кодов скобки означают отрицательное значение
-                    cleanedValue = cleanedValue.Replace("(", "-").Replace(")", "");
-                }*/
-
+                string cleanedValue = rawValue.Replace(",", ".").Replace(" ", "");
                 if (double.TryParse(cleanedValue, System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out double value))
                 {
-                    Console.WriteLine($"Parsed value for code {code}: {value}");
                     return value;
-                }
-                else
-                {
-                    Console.WriteLine($"Failed to parse value for code {code}: {cleanedValue}");
-                    return 0;
                 }
             }
 
-            Console.WriteLine($"Cell with code {code} not found in worksheet {worksheet.Name}");
             return 0;
         }
-        
+
         private RiskAssessmentResult CalculateRiskAssessment(FinancialData data)
         {
             var result = new RiskAssessmentResult();
 
-            // Вспомогательная функция для безопасного деления
             double SafeDivide(double numerator, double denominator) => denominator != 0 ? numerator / denominator : 0;
-
-            // Вспомогательная функция для безопасного логарифма
             double SafeLog(double value) => value > 0 ? Math.Log(value) : 0;
 
             double x1 = SafeDivide(data.Код1200 - data.Код1500, data.Код1600);
@@ -416,22 +310,16 @@ namespace CreditRiskSystem.Server.Controllers
             double x3 = SafeDivide(data.Код2300, data.Код1600);
             double x4 = SafeDivide(data.Код1300, data.Код1400 + data.Код1500);
             double x5 = SafeDivide(data.Код2110, data.Код1600);
-            result.AltmanZScore = double.IsNaN(0.717 * x1 + 0.847 * x2 + 3.107 * x3 + 0.420 * x4 + 0.998 * x5)
-                ? 0
-                : 0.717 * x1 + 0.847 * x2 + 3.107 * x3 + 0.420 * x4 + 0.998 * x5;
+            result.AltmanZScore = 0.717 * x1 + 0.847 * x2 + 3.107 * x3 + 0.420 * x4 + 0.998 * x5;
             result.AltmanRiskLevel = result.AltmanZScore > 2.9 ? "Низкий" : (result.AltmanZScore > 1.23 ? "Средний" : "Высокий");
 
-            // Springate
             double a = SafeDivide(data.Код1200 - data.Код1500, data.Код1600);
             double b = SafeDivide(data.Код2300, data.Код1600);
             double c = SafeDivide(data.Код2300, data.Код1500);
             double d = SafeDivide(data.Код2110, data.Код1600);
-            result.SpringateScore = double.IsNaN(1.03 * a + 3.07 * b + 0.66 * c + 0.4 * d)
-                ? 0
-                : 1.03 * a + 3.07 * b + 0.66 * c + 0.4 * d;
+            result.SpringateScore = 1.03 * a + 3.07 * b + 0.66 * c + 0.4 * d;
             result.SpringateRiskLevel = result.SpringateScore > 0.862 ? "Низкий" : "Высокий";
 
-            // Fulmer
             double v1 = SafeDivide(data.Код1370, data.Код1600);
             double v2 = SafeDivide(data.Код2110, data.Код1600);
             double v3 = SafeDivide(data.Код2300, data.Код1300);
@@ -441,12 +329,9 @@ namespace CreditRiskSystem.Server.Controllers
             double v7 = SafeLog(data.Код1600);
             double v8 = SafeDivide(data.Код1200 - data.Код1500, data.Код1400 + data.Код1500);
             double v9 = data.Код2330 > 0 ? SafeLog(data.Код2300 / data.Код2330) : 0;
-            result.FulmerScore = double.IsNaN(5.528 * v1 + 0.212 * v2 + 0.073 * v3 + 1.270 * v4 - 0.120 * v5 + 2.335 * v6 + 0.575 * v7 + 1.083 * v8 + 0.894 * v9 - 6.075)
-                ? 0
-                : 5.528 * v1 + 0.212 * v2 + 0.073 * v3 + 1.270 * v4 - 0.120 * v5 + 2.335 * v6 + 0.575 * v7 + 1.083 * v8 + 0.894 * v9 - 6.075;
+            result.FulmerScore = 5.528 * v1 + 0.212 * v2 + 0.073 * v3 + 1.270 * v4 - 0.120 * v5 + 2.335 * v6 + 0.575 * v7 + 1.083 * v8 + 0.894 * v9 - 6.075;
             result.FulmerRiskLevel = result.FulmerScore > 0 ? "Низкий" : "Высокий";
 
-            // Ohlson O-score
             double o = -1.32 - 0.407 * SafeLog(data.Код1600)
                 + 6.03 * SafeDivide(data.Код1400 + data.Код1500, data.Код1600)
                 - 1.43 * SafeDivide(data.Код1200 - data.Код1500, data.Код1600)
@@ -455,63 +340,57 @@ namespace CreditRiskSystem.Server.Controllers
                 - 2.37 * SafeDivide(data.Код2400, data.Код1600)
                 - 1.83 * SafeDivide(data.Код2300, data.Код1400 + data.Код1500)
                 + 0.285 * (data.Код2400 < 0 ? 1 : 0)
-                - 0.521 * 0; // CHIN не учитываем без прошлогодних данных
-            result.OhlsonOScore = double.IsNaN(o) ? 0 : o;
+                - 0.521 * 0;
+            result.OhlsonOScore = o;
             result.OhlsonProbability = 1 / (1 + Math.Exp(-result.OhlsonOScore));
 
-            // Zmijewski
             double x = -4.3 - 4.5 * SafeDivide(data.Код2400, data.Код1600)
                 + 5.7 * SafeDivide(data.Код1400 + data.Код1500, data.Код1600)
                 - 0.004 * SafeDivide(data.Код1200, data.Код1500);
-            result.ZmijewskiScore = double.IsNaN(x) ? 0 : x;
+            result.ZmijewskiScore = x;
             result.ZmijewskiProbability = 1 / (1 + Math.Exp(-result.ZmijewskiScore));
 
-            // Рентабельность
-            result.Р1 = SafeDivide(data.Код2200 * 100, data.Код2110); // Рентабельность объема продаж
-            result.Р2 = SafeDivide(data.Код2300 * 100, data.Код2110); // Бухгалтерская рентабельность
-            result.Р3 = SafeDivide(data.Код2400 * 100, data.Код2110); // Чистая рентабельность
-            result.Р4 = SafeDivide(data.Код2400 * 100, data.Код1600); // Экономическая рентабельность
-            result.Р5 = SafeDivide(data.Код2400 * 100, data.Код1300); // Рентабельность собственного капитала
-            result.Р6 = SafeDivide(data.Код2100 * 100, data.Код2110); // Валовая рентабельность
-            result.Р7 = SafeDivide(data.Код2200 * 100, data.Код2120 + data.Код2210 + data.Код2220 + data.Код2350); // Рентабельность реализованной продукции
+            result.Р1 = SafeDivide(data.Код2200 * 100, data.Код2110);
+            result.Р2 = SafeDivide(data.Код2300 * 100, data.Код2110);
+            result.Р3 = SafeDivide(data.Код2400 * 100, data.Код2110);
+            result.Р4 = SafeDivide(data.Код2400 * 100, data.Код1600);
+            result.Р5 = SafeDivide(data.Код2400 * 100, data.Код1300);
+            result.Р6 = SafeDivide(data.Код2100 * 100, data.Код2110);
+            result.Р7 = SafeDivide(data.Код2200 * 100, data.Код2120 + data.Код2210 + data.Код2220 + data.Код2350);
 
-            // Деловая активность
-            result.ДА1 = SafeDivide(data.Код2110, data.Код1600); // Коэффициент общей оборачиваемости капитала
-            result.ДА2 = SafeDivide(data.Код2110, data.Код1200); // Коэффициент оборачиваемости оборотных средств
-            result.ДА3 = SafeDivide(data.Код2110, data.Код1110); // Коэффициент отдачи нематериальных активов
-            result.ДА4 = SafeDivide(data.Код2110, data.Код1150); // Фондоотдача
-            result.ДА5 = SafeDivide(data.Код2110, data.Код1370); // Коэффициент отдачи собственного капитала
-            result.ДА6 = SafeDivide(data.Код2110, data.Код1230); // Коэффициент оборачиваемости средств в расчетах
-            result.ДА7 = SafeDivide(data.Код2110, data.Код1510); // Коэффициент оборачиваемости кредиторской задолженности
-            result.ДА8 = SafeDivide(data.Код1210 * 365, data.Код2110); // Оборачиваемость материальных средств
-            result.ДА9 = SafeDivide(data.Код1250 * 365, data.Код2110); // Оборачиваемость денежных средств
-            result.ДА10 = SafeDivide(data.Код1230 * 365, data.Код2110); // Срок погашения дебиторской задолженности
-            result.ДА11 = SafeDivide(data.Код1520 * 365, data.Код2110); // Срок погашения кредиторской задолженности
+            result.ДА1 = SafeDivide(data.Код2110, data.Код1600);
+            result.ДА2 = SafeDivide(data.Код2110, data.Код1200);
+            result.ДА3 = SafeDivide(data.Код2110, data.Код1110);
+            result.ДА4 = SafeDivide(data.Код2110, data.Код1150);
+            result.ДА5 = SafeDivide(data.Код2110, data.Код1370);
+            result.ДА6 = SafeDivide(data.Код2110, data.Код1230);
+            result.ДА7 = SafeDivide(data.Код2110, data.Код1510);
+            result.ДА8 = SafeDivide(data.Код1210 * 365, data.Код2310);
+            result.ДА9 = SafeDivide(data.Код1250 * 365, data.Код2310);
+            result.ДА10 = SafeDivide(data.Код1230 * 365, data.Код2310);
+            result.ДА11 = SafeDivide(data.Код1520 * 365, data.Код2310);
 
-            // Финансовая устойчивость
-            result.ФУ1 = SafeDivide(data.Код1400 + data.Код1500, data.Код1300); // Коэффициент капитализации
-            result.ФУ2 = data.Код1300 - data.Код1100; // Собственный капитал в обороте
-            result.ФУ3 = SafeDivide(data.Код1300 - data.Код1100, data.Код1210 + data.Код1220); // Коэффициент обеспеченности запасов
-            result.ФУ4 = SafeDivide(data.Код1300, data.Код1700); // Коэффициент автономии
-            result.ФУ5 = SafeDivide(data.Код1300, data.Код1400 + data.Код1500); // Коэффициент финансирования
-            result.ФУ6 = SafeDivide(data.Код1300 + data.Код1400, data.Код1700); // Коэффициент финансовой устойчивости
-            result.ФУ7 = SafeDivide(data.Код1300 - data.Код1100, data.Код1300); // Коэффициент маневренности
-            result.ФУ8 = SafeDivide(data.Код1100, data.Код1200); // Коэффициент мобилизации
+            result.ФУ1 = SafeDivide(data.Код1400 + data.Код1500, data.Код1300);
+            result.ФУ2 = data.Код1300 - data.Код1100;
+            result.ФУ3 = SafeDivide(data.Код1300 - data.Код1100, data.Код1210 + data.Код1220);
+            result.ФУ4 = SafeDivide(data.Код1300, data.Код1700);
+            result.ФУ5 = SafeDivide(data.Код1300, data.Код1400 + data.Код1500);
+            result.ФУ6 = SafeDivide(data.Код1300 + data.Код1400, data.Код1700);
+            result.ФУ7 = SafeDivide(data.Код1300 - data.Код1100, data.Код1300);
+            result.ФУ8 = SafeDivide(data.Код1100, data.Код1200);
 
-            // Платёжеспособность
             result.П1 = SafeDivide(
                 (data.Код1250 + data.Код1240) + 0.5 * data.Код1230 + 0.3 * (data.Код1210 + data.Код1220 + data.Код1230 + data.Код1240 + data.Код1250 + data.Код1260),
                 data.Код1520 + 0.5 * (data.Код1510 + data.Код1550) + 0.3 * (data.Код1540 + data.Код1530 + data.Код1400)
-            ); // Общий показатель платежеспособности
-            result.П2 = SafeDivide(data.Код1250 + data.Код1240, data.Код1500); // Коэффициент абсолютной ликвидности
-            result.П3 = SafeDivide(data.Код1250 + data.Код1240 + data.Код1230, data.Код1500); // Коэффициент быстрой ликвидности
-            result.П4 = SafeDivide(data.Код1200, data.Код1500); // Коэффициент текущей ликвидности
-            result.П5 = SafeDivide(data.Код1210 + data.Код1220 + data.Код1230, data.Код1200 - data.Код1500); // Коэффициент маневренности функционирующего капитала
-            result.П6 = SafeDivide(data.Код1200, data.Код1700); // Доля оборотных средств в активах
-            result.П7 = SafeDivide(data.Код1300 - data.Код1100, data.Код1200); // Коэффициент обеспеченности собственными средствами
-            result.П8 = SafeDivide(data.Код1200 + data.Код1100, data.Код1500 + data.Код1400); // Коэффициент обеспеченности обязательств активами
+            );
+            result.П2 = SafeDivide(data.Код1250 + data.Код1240, data.Код1500);
+            result.П3 = SafeDivide(data.Код1250 + data.Код1240 + data.Код1230, data.Код1500);
+            result.П4 = SafeDivide(data.Код1200, data.Код1500);
+            result.П5 = SafeDivide(data.Код1210 + data.Код1220 + data.Код1230, data.Код1200 - data.Код1500);
+            result.П6 = SafeDivide(data.Код1200, data.Код1700);
+            result.П7 = SafeDivide(data.Код1300 - data.Код1100, data.Код1200);
+            result.П8 = SafeDivide(data.Код1200 + data.Код1100, data.Код1500 + data.Код1400);
 
-            // Общая оценка кредитного риска (по моделям)
             int highRiskCount = 0;
             if (result.AltmanRiskLevel == "Высокий") highRiskCount++;
             if (result.SpringateRiskLevel == "Высокий") highRiskCount++;

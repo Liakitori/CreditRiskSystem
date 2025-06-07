@@ -8,6 +8,7 @@ namespace CreditRiskSystem.Server.Data
     {
         public DbSet<FinancialData> FinancialData { get; set; }
         public DbSet<RiskAssessmentResult> RiskAssessmentResults { get; set; }
+        public DbSet<User> Users { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

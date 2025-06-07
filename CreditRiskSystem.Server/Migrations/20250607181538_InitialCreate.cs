@@ -12,11 +12,25 @@ namespace CreditRiskSystem.Server.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Username = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FinancialData",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Код1100 = table.Column<double>(type: "double precision", nullable: false),
                     Код1110 = table.Column<double>(type: "double precision", nullable: false),
                     Код1150 = table.Column<double>(type: "double precision", nullable: false),
@@ -52,6 +66,12 @@ namespace CreditRiskSystem.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_FinancialData", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FinancialData_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -119,6 +139,11 @@ namespace CreditRiskSystem.Server.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_FinancialData_UserId",
+                table: "FinancialData",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RiskAssessmentResults_FinancialDataId",
                 table: "RiskAssessmentResults",
                 column: "FinancialDataId");
@@ -132,6 +157,9 @@ namespace CreditRiskSystem.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "FinancialData");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

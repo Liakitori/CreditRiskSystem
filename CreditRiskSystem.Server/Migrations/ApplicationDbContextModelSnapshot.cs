@@ -31,6 +31,9 @@ namespace CreditRiskSystem.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.Property<double>("Код1100")
                         .HasColumnType("double precision");
 
@@ -125,6 +128,8 @@ namespace CreditRiskSystem.Server.Migrations
                         .HasColumnType("double precision");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("FinancialData");
                 });
@@ -287,6 +292,36 @@ namespace CreditRiskSystem.Server.Migrations
                     b.ToTable("RiskAssessmentResults");
                 });
 
+            modelBuilder.Entity("CreditRiskSystem.Common.Models.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("CreditRiskSystem.Common.Models.FinancialData", b =>
+                {
+                    b.HasOne("CreditRiskSystem.Common.Models.User", "User")
+                        .WithMany("FinancialDatas")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CreditRiskSystem.Common.Models.RiskAssessmentResult", b =>
                 {
                     b.HasOne("CreditRiskSystem.Common.Models.FinancialData", "FinancialData")
@@ -296,6 +331,11 @@ namespace CreditRiskSystem.Server.Migrations
                         .IsRequired();
 
                     b.Navigation("FinancialData");
+                });
+
+            modelBuilder.Entity("CreditRiskSystem.Common.Models.User", b =>
+                {
+                    b.Navigation("FinancialDatas");
                 });
 #pragma warning restore 612, 618
         }

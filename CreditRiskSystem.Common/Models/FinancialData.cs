@@ -10,6 +10,8 @@ namespace CreditRiskSystem.Common.Models
     {
         public Guid Id { get; set; }
         public DateTime CreatedAt { get; set; }
+        public Guid UserId { get; set; }
+        public User User { get; set; }
         // Коды из Бухгалтерского баланса (Форма 1)
         public double Код1100 { get; set; } // Внеоборотные активы
         public double Код1110 { get; set; } // Нематериальные активы
