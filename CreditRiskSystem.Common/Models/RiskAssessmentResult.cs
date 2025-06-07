@@ -61,7 +61,7 @@ namespace CreditRiskSystem.Common.Models
         public double ФУ8 { get; set; } // Коэффициент мобилизации
 
         // Платёжеспособность
-        public double Л1 { get; set; } // Общий показатель платежеспособности
+        public double П1 { get; set; } // Общий показатель платежеспособности
         public double П2 { get; set; } // Коэффициент абсолютной ликвидности
         public double П3 { get; set; } // Коэффициент быстрой ликвидности
         public double П4 { get; set; } // Коэффициент текущей ликвидности

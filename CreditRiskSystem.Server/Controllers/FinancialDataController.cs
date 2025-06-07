@@ -148,6 +148,18 @@ namespace CreditRiskSystem.Server.Controllers
                            c.Value.ToString().Trim().Equals(code, StringComparison.OrdinalIgnoreCase);
                 });
 
+            //ВОЗМОЖНО КОГДА-ТО ПОНАДОБИТСЯ ТАКОЙ ВАРИАНТ
+            /*// Ищем ячейку с кодом строки в диапазоне столбцов, начиная с 9-й строки
+            var cell = worksheet.RowsUsed(r => r.RowNumber() >= 9)
+                .SelectMany(r => r.CellsUsed())
+                .FirstOrDefault(c =>
+                {
+                    var colNum = c.WorksheetColumn().ColumnNumber();
+                    return colNum >= codeStartColumn && colNum <= codeEndColumn &&
+                           c.Value.ToString().Trim().Equals(code, StringComparison.OrdinalIgnoreCase);
+                });*/
+
+
             if (cell != null)
             {
                 // Извлекаем значение из столбца valueColumn в той же строке
@@ -159,14 +171,28 @@ namespace CreditRiskSystem.Server.Controllers
                 // Обрабатываем возможные форматы чисел
                 string cleanedValue = rawValue
                     .Replace(",", ".") // Заменяем запятые на точки
-                    .Replace(" ", ""); // Удаляем пробелы, например 23 208 -> 23208
+                    .Replace(" ", "") // Удаляем пробелы, например 23 208 -> 23208
+                    .Replace(",", ".") // Заменяем запятые на точки
+                    .Replace(" ", ""); // Удаляем пробелы
 
-                // Для Код2330 убираем скобки, но не добавляем минус
+
+                //РАСКОММЕНТИТЬ ТОЛЬКО ЕСЛИ НАДО СДЕЛАТЬ КАКИЕ-ТО КОДЫ СО ЗНАКОМ МИНУС, НО ЛУЧШЕ МЕНЯТЬ ЗНАК В САМИХ РАСЧЕТАХ
+                /*// Для Код2330 убираем скобки, но не добавляем минус
                 if (code.Equals("2330", StringComparison.OrdinalIgnoreCase))
                 {
                     cleanedValue = cleanedValue.Replace("(", "").Replace(")", "");
                 }
-                /*else
+                else
+                {
+                    // Для остальных кодов скобки означают отрицательное значение
+                    cleanedValue = cleanedValue.Replace("(", "-").Replace(")", "");
+                }
+                // Для Код2330, Код2120, Код2210, Код2220, Код2350 убираем скобки, но не добавляем минус
+                if (new[] { "2330", "2120", "2210", "2220", "2350" }.Contains(code, StringComparer.OrdinalIgnoreCase))
+                {
+                    cleanedValue = cleanedValue.Replace("(", "").Replace(")", "");
+                }
+                else
                 {
                     // Для остальных кодов скобки означают отрицательное значение
                     cleanedValue = cleanedValue.Replace("(", "-").Replace(")", "");
@@ -261,7 +287,52 @@ namespace CreditRiskSystem.Server.Controllers
             result.ZmijewskiScore = double.IsNaN(x) ? 0 : x;
             result.ZmijewskiProbability = 1 / (1 + Math.Exp(-result.ZmijewskiScore));
 
-            // Общая оценка кредитного риска
+            // Рентабельность
+            result.Р1 = SafeDivide(data.Код2200 * 100, data.Код2110); // Рентабельность объема продаж
+            result.Р2 = SafeDivide(data.Код2300 * 100, data.Код2110); // Бухгалтерская рентабельность
+            result.Р3 = SafeDivide(data.Код2400 * 100, data.Код2110); // Чистая рентабельность
+            result.Р4 = SafeDivide(data.Код2400 * 100, data.Код1600); // Экономическая рентабельность
+            result.Р5 = SafeDivide(data.Код2400 * 100, data.Код1300); // Рентабельность собственного капитала
+            result.Р6 = SafeDivide(data.Код2100 * 100, data.Код2110); // Валовая рентабельность
+            result.Р7 = SafeDivide(data.Код2200 * 100, data.Код2120 + data.Код2210 + data.Код2220 + data.Код2350); // Рентабельность реализованной продукции
+
+            // Деловая активность
+            result.ДА1 = SafeDivide(data.Код2110, data.Код1600); // Коэффициент общей оборачиваемости капитала
+            result.ДА2 = SafeDivide(data.Код2110, data.Код1200); // Коэффициент оборачиваемости оборотных средств
+            result.ДА3 = SafeDivide(data.Код2110, data.Код1110); // Коэффициент отдачи нематериальных активов
+            result.ДА4 = SafeDivide(data.Код2110, data.Код1150); // Фондоотдача
+            result.ДА5 = SafeDivide(data.Код2110, data.Код1370); // Коэффициент отдачи собственного капитала
+            result.ДА6 = SafeDivide(data.Код2110, data.Код1230); // Коэффициент оборачиваемости средств в расчетах
+            result.ДА7 = SafeDivide(data.Код2110, data.Код1510); // Коэффициент оборачиваемости кредиторской задолженности
+            result.ДА8 = SafeDivide(data.Код1210 * 365, data.Код2110); // Оборачиваемость материальных средств
+            result.ДА9 = SafeDivide(data.Код1250 * 365, data.Код2110); // Оборачиваемость денежных средств
+            result.ДА10 = SafeDivide(data.Код1230 * 365, data.Код2110); // Срок погашения дебиторской задолженности
+            result.ДА11 = SafeDivide(data.Код1520 * 365, data.Код2110); // Срок погашения кредиторской задолженности
+
+            // Финансовая устойчивость
+            result.ФУ1 = SafeDivide(data.Код1400 + data.Код1500, data.Код1300); // Коэффициент капитализации
+            result.ФУ2 = data.Код1300 - data.Код1100; // Собственный капитал в обороте
+            result.ФУ3 = SafeDivide(data.Код1300 - data.Код1100, data.Код1210 + data.Код1220); // Коэффициент обеспеченности запасов
+            result.ФУ4 = SafeDivide(data.Код1300, data.Код1700); // Коэффициент автономии
+            result.ФУ5 = SafeDivide(data.Код1300, data.Код1400 + data.Код1500); // Коэффициент финансирования
+            result.ФУ6 = SafeDivide(data.Код1300 + data.Код1400, data.Код1700); // Коэффициент финансовой устойчивости
+            result.ФУ7 = SafeDivide(data.Код1300 - data.Код1100, data.Код1300); // Коэффициент маневренности
+            result.ФУ8 = SafeDivide(data.Код1100, data.Код1200); // Коэффициент мобилизации
+
+            // Платёжеспособность
+            result.П1 = SafeDivide(
+                (data.Код1250 + data.Код1240) + 0.5 * data.Код1230 + 0.3 * (data.Код1210 + data.Код1220 + data.Код1230 + data.Код1240 + data.Код1250 + data.Код1260),
+                data.Код1520 + 0.5 * (data.Код1510 + data.Код1550) + 0.3 * (data.Код1540 + data.Код1530 + data.Код1400)
+            ); // Общий показатель платежеспособности
+            result.П2 = SafeDivide(data.Код1250 + data.Код1240, data.Код1500); // Коэффициент абсолютной ликвидности
+            result.П3 = SafeDivide(data.Код1250 + data.Код1240 + data.Код1230, data.Код1500); // Коэффициент быстрой ликвидности
+            result.П4 = SafeDivide(data.Код1200, data.Код1500); // Коэффициент текущей ликвидности
+            result.П5 = SafeDivide(data.Код1210 + data.Код1220 + data.Код1230, data.Код1200 - data.Код1500); // Коэффициент маневренности функционирующего капитала
+            result.П6 = SafeDivide(data.Код1200, data.Код1700); // Доля оборотных средств в активах
+            result.П7 = SafeDivide(data.Код1300 - data.Код1100, data.Код1200); // Коэффициент обеспеченности собственными средствами
+            result.П8 = SafeDivide(data.Код1200 + data.Код1100, data.Код1500 + data.Код1400); // Коэффициент обеспеченности обязательств активами
+
+            // Общая оценка кредитного риска (по моделям)
             int highRiskCount = 0;
             if (result.AltmanRiskLevel == "Высокий") highRiskCount++;
             if (result.SpringateRiskLevel == "Высокий") highRiskCount++;
