@@ -78,19 +78,40 @@ namespace CreditRiskSystem.Server.Controllers
             // Бухгалтерский баланс
             var balanceSheet = workbook.Worksheets.FirstOrDefault(ws => ws.Name.Equals("Бухгалтерский баланс", StringComparison.OrdinalIgnoreCase))
                 ?? throw new InvalidOperationException("Лист 'Бухгалтерский баланс' не найден.");
+            financialData.Код1100 = GetValueFromCell(balanceSheet, "1100");
+            financialData.Код1110 = GetValueFromCell(balanceSheet, "1110");
+            financialData.Код1150 = GetValueFromCell(balanceSheet, "1150");
             financialData.Код1200 = GetValueFromCell(balanceSheet, "1200");
+            financialData.Код1210 = GetValueFromCell(balanceSheet, "1210");
+            financialData.Код1220 = GetValueFromCell(balanceSheet, "1220");
+            financialData.Код1230 = GetValueFromCell(balanceSheet, "1230");
+            financialData.Код1240 = GetValueFromCell(balanceSheet, "1240");
+            financialData.Код1250 = GetValueFromCell(balanceSheet, "1250");
+            financialData.Код1260 = GetValueFromCell(balanceSheet, "1260");
             financialData.Код1300 = GetValueFromCell(balanceSheet, "1300");
             financialData.Код1370 = GetValueFromCell(balanceSheet, "1370");
             financialData.Код1400 = GetValueFromCell(balanceSheet, "1400");
             financialData.Код1500 = GetValueFromCell(balanceSheet, "1500");
+            financialData.Код1510 = GetValueFromCell(balanceSheet, "1510");
+            financialData.Код1520 = GetValueFromCell(balanceSheet, "1520");
+            financialData.Код1530 = GetValueFromCell(balanceSheet, "1530");
+            financialData.Код1540 = GetValueFromCell(balanceSheet, "1540");
+            financialData.Код1550 = GetValueFromCell(balanceSheet, "1550");
             financialData.Код1600 = GetValueFromCell(balanceSheet, "1600");
+            financialData.Код1700 = GetValueFromCell(balanceSheet, "1700");
 
             // Отчет о финансовых результатах
             var incomeStatement = workbook.Worksheets.FirstOrDefault(ws => ws.Name.Equals("Отчет о финансовых результатах", StringComparison.OrdinalIgnoreCase))
                 ?? throw new InvalidOperationException("Лист 'Отчет о финансовых результатах' не найден.");
+            financialData.Код2100 = GetValueFromCell(incomeStatement, "2100");
             financialData.Код2110 = GetValueFromCell(incomeStatement, "2110");
+            financialData.Код2120 = GetValueFromCell(incomeStatement, "2120");
+            financialData.Код2200 = GetValueFromCell(incomeStatement, "2200");
+            financialData.Код2210 = GetValueFromCell(incomeStatement, "2210");
+            financialData.Код2220 = GetValueFromCell(incomeStatement, "2220");
             financialData.Код2300 = GetValueFromCell(incomeStatement, "2300");
             financialData.Код2330 = GetValueFromCell(incomeStatement, "2330");
+            financialData.Код2350 = GetValueFromCell(incomeStatement, "2350");
             financialData.Код2400 = GetValueFromCell(incomeStatement, "2400");
 
             return financialData;
@@ -145,11 +166,11 @@ namespace CreditRiskSystem.Server.Controllers
                 {
                     cleanedValue = cleanedValue.Replace("(", "").Replace(")", "");
                 }
-                else
+                /*else
                 {
                     // Для остальных кодов скобки означают отрицательное значение
                     cleanedValue = cleanedValue.Replace("(", "-").Replace(")", "");
-                }
+                }*/
 
                 if (double.TryParse(cleanedValue, System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out double value))
