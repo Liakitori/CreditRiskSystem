@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
+using PdfSharpCore.Pdf.Security;
 using System;
 using System.IO;
 using System.Linq;
@@ -70,7 +71,10 @@ namespace CreditRiskSystem.Server.Controllers
 
         /// <summary>
         /// Эндпоинт для скачивания результата в формате PDF.
-        /// Возвращается последний результат оценки, отсортированный по дате расчёта.
+        /// Отчёт включает показатели моделей, а также показатели по разделам: Рентабельность, Деловая активность,
+        /// Финансовая устойчивость и Платёжеспособность.
+        /// В отчёте выводится заголовок с номером отчёта и его ID, установлен watermark, а настройки безопасности
+        /// делают PDF недоступным для редактирования.
         /// </summary>
         [HttpGet("download/pdf")]
         public async Task<IActionResult> DownloadPdf()
@@ -84,38 +88,197 @@ namespace CreditRiskSystem.Server.Controllers
                 return NotFound("Результат оценки не найден.");
             }
 
-            // Генерация PDF
+            // Создание PDF-документа
             PdfDocument document = new PdfDocument();
             document.Info.Title = "Результат оценки кредитного риска";
+
+            // Настройки безопасности (защита от редактирования)
+            document.SecuritySettings.OwnerPassword = "OwnerSecret@123"; // замените на надёжный пароль
+            document.SecuritySettings.PermitAccessibilityExtractContent = false;
+            document.SecuritySettings.PermitAnnotations = false;
+            document.SecuritySettings.PermitAssembleDocument = false;
+            document.SecuritySettings.PermitExtractContent = false;
+            document.SecuritySettings.PermitFormsFill = false;
+            document.SecuritySettings.PermitModifyDocument = false;
+            document.SecuritySettings.PermitPrint = true;
+
             PdfPage page = document.AddPage();
             XGraphics gfx = XGraphics.FromPdfPage(page);
-            XFont font = new XFont("Verdana", 12, XFontStyle.Regular);
-            double yPoint = 40;
+            XFont headerFont = new XFont("Verdana", 14, XFontStyle.Bold);
+            XFont sectionFont = new XFont("Verdana", 12, XFontStyle.Bold);
+            XFont textFont = new XFont("Verdana", 12, XFontStyle.Regular);
+            double margin = 40;
+            double yPoint = margin;
 
-            gfx.DrawString("=== Результаты оценки кредитного риска ===", font, XBrushes.Black,
-                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
+            // Заголовок с номером отчёта и его ID
+            gfx.DrawString($"Отчет № {result.Id}", headerFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
             yPoint += 30;
-            gfx.DrawString($"Altman Z-score: {result.AltmanZScore:F2} ({result.AltmanRiskLevel})", font, XBrushes.Black,
-                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
-            yPoint += 20;
-            gfx.DrawString($"Springate: {result.SpringateScore:F2} ({result.SpringateRiskLevel})", font, XBrushes.Black,
-                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
-            yPoint += 20;
-            gfx.DrawString($"Fulmer: {result.FulmerScore:F2} ({result.FulmerRiskLevel})", font, XBrushes.Black,
-                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
-            yPoint += 20;
-            gfx.DrawString($"Ohlson O-score: {result.OhlsonOScore:F2} (Вероятность: {result.OhlsonProbability:F2})", font, XBrushes.Black,
-                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
-            yPoint += 20;
-            gfx.DrawString($"Zmijewski: {result.ZmijewskiScore:F2} (Вероятность: {result.ZmijewskiProbability:F2})", font, XBrushes.Black,
-                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
-            yPoint += 20;
-            gfx.DrawString($"Общая оценка кредитного риска: {result.OverallRiskAssessment}", font, XBrushes.Black,
-                new XRect(40, yPoint, page.Width - 80, page.Height), XStringFormats.TopLeft);
 
-            using MemoryStream stream = new MemoryStream();
-            document.Save(stream, false);
-            return File(stream.ToArray(), "application/pdf", "result.pdf");
+            // Раздел: Модели кредитного риска
+            gfx.DrawString("=== Модели кредитного риска ===", sectionFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 25;
+            gfx.DrawString($"Altman Z-score: {result.AltmanZScore:F2} ({result.AltmanRiskLevel})", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Springate: {result.SpringateScore:F2} ({result.SpringateRiskLevel})", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Fulmer: {result.FulmerScore:F2} ({result.FulmerRiskLevel})", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Ohlson O-score: {result.OhlsonOScore:F2} (Вероятность: {result.OhlsonProbability:F2})", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Zmijewski: {result.ZmijewskiScore:F2} (Вероятность: {result.ZmijewskiProbability:F2})", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Общая оценка кредитного риска: {result.OverallRiskAssessment}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 30;
+
+            // Раздел: Рентабельность
+            gfx.DrawString("=== Рентабельность ===", sectionFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 25;
+            gfx.DrawString($"Рентабельность объема продаж (Р1): {result.Р1:F2}%", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Бухгалтерская рентабельность (Р2): {result.Р2:F2}%", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Чистая рентабельность (Р3): {result.Р3:F2}%", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Экономическая рентабельность (Р4): {result.Р4:F2}%", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Рентабельность собственного капитала (Р5): {result.Р5:F2}%", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Валовая рентабельность (Р6): {result.Р6:F2}%", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Рентабельность реализованной продукции (Р7): {result.Р7:F2}%", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 30;
+
+            // Раздел: Деловая активность
+            gfx.DrawString("=== Деловая активность ===", sectionFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 25;
+            gfx.DrawString($"Общая оборачиваемость капитала (ДА1): {result.ДА1:F2} оборотов", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Оборачиваемость оборотных средств (ДА2): {result.ДА2:F2} оборотов", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Отдача нематериальных активов (ДА3): {result.ДА3:F2} оборотов", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Фондоотдача (ДА4): {result.ДА4:F2} оборотов", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Отдача собственного капитала (ДА5): {result.ДА5:F2} оборотов", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Оборачиваемость средств в расчетах (ДА6): {result.ДА6:F2} оборотов", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Оборачиваемость кредиторской задолженности (ДА7): {result.ДА7:F2} оборотов", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Оборачиваемость материальных средств (ДА8): {result.ДА8:F2} дней", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Оборачиваемость денежных средств (ДА9): {result.ДА9:F2} дней", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Срок погашения дебиторской задолженности (ДА10): {result.ДА10:F2} дней", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Срок погашения кредиторской задолженности (ДА11): {result.ДА11:F2} дней", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 30;
+
+            // Раздел: Финансовая устойчивость
+            gfx.DrawString("=== Финансовая устойчивость ===", sectionFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 25;
+            gfx.DrawString($"Коэффициент капитализации (ФУ1): {result.ФУ1:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Собственный капитал в обороте (ФУ2): {result.ФУ2:F2} тыс. руб.", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Обеспеченность запасов (ФУ3): {result.ФУ3:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент автономии (ФУ4): {result.ФУ4:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент финансирования (ФУ5): {result.ФУ5:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент финансовой устойчивости (ФУ6): {result.ФУ6:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент маневренности (ФУ7): {result.ФУ7:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент мобилизации (ФУ8): {result.ФУ8:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 30;
+
+            // Раздел: Платёжеспособность
+            gfx.DrawString("=== Платёжеспособность ===", sectionFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 25;
+            gfx.DrawString($"Общий показатель платежеспособности (П1): {result.П1:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент абсолютной ликвидности (П2): {result.П2:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент быстрой ликвидности (П3): {result.П3:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент текущей ликвидности (П4): {result.П4:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Коэффициент маневренности (П5): {result.П5:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Доля оборотных средств (П6): {result.П6:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Обеспеченность собственными (П7): {result.П7:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 20;
+            gfx.DrawString($"Обеспеченность обязательствами (П8): {result.П8:F2}", textFont, XBrushes.Black,
+                new XRect(margin, yPoint, page.Width - 2 * margin, 20), XStringFormats.TopLeft);
+            yPoint += 30;
+
+            // Добавление watermark в правом нижнем углу
+            string watermark = "Сгенерировано интеллектуальной системой оценки кредитного риска компаний";
+            XFont watermarkFont = new XFont("Verdana", 10, XFontStyle.Italic);
+            XSize watermarkSize = gfx.MeasureString(watermark, watermarkFont);
+            double watermarkX = page.Width - watermarkSize.Width - margin;
+            double watermarkY = page.Height - watermarkSize.Height - margin;
+            // Настройка прозрачности и поворота (45 градусов)
+            gfx.Save();
+            gfx.TranslateTransform(watermarkX, watermarkY);
+            gfx.RotateTransform(45);
+            XGraphicsState state = gfx.Save();
+            gfx.DrawString(watermark, watermarkFont, new XSolidBrush(XColor.FromArgb(128, 0, 0, 0)),
+                new XRect(0, 0, watermarkSize.Width, watermarkSize.Height), XStringFormats.Center);
+            gfx.Restore(state);
+            gfx.Restore();
+
+            using MemoryStream ms = new MemoryStream();
+            document.Save(ms, false);
+            return File(ms.ToArray(), "application/pdf", "result.pdf");
         }
 
         /// <summary>
