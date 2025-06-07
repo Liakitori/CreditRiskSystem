@@ -40,6 +40,6 @@
         </StackPanel>
 		
         <!-- Кнопка "Выйти" -->
-        <Button Content="Выйти" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,10"/>
+        <Button Content="Выйти" Command="{Binding CloseCommand}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,10"/>
     </Grid>
 </Window>

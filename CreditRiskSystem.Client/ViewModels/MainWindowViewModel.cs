@@ -9,6 +9,7 @@ using System.Net.Http.Json;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Avalonia.Controls.ApplicationLifetimes;
 
 namespace CreditRiskSystem.Client.ViewModels
 {
@@ -26,6 +27,12 @@ namespace CreditRiskSystem.Client.ViewModels
         public ReactiveCommand<Unit, Unit> UploadFileCommand { get; }
         public ReactiveCommand<Unit, Unit> DownloadPdfCommand { get; }
         public ReactiveCommand<Unit, Unit> DownloadJsonCommand { get; }
+        private ReactiveCommand<Unit, Unit>? _closeCommand;
+        // Инициализация команд
+        public ReactiveCommand<Unit, Unit> CloseCommand => _closeCommand ??= ReactiveCommand.Create(() => {
+            var window = (App.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            window.Close();
+        });
 
         public MainWindowViewModel(HttpClient httpClient, Window parentWindow)
         {
