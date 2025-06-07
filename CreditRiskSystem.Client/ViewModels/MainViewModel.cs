@@ -44,12 +44,12 @@ public class MainViewModel : ViewModelBase
         };
 
         var result = await _dialogService.ShowOpenFileDialogAsync("Выберите файл Excel", filters);
-        if (result != null && result.Length > 0)
+        if (result is { Length: > 0 })
         {
             try
             {
                 var filePath = result[0];
-                using var stream = File.OpenRead(filePath);
+                await using var stream = File.OpenRead(filePath);
                 var content = new MultipartFormDataContent();
                 content.Add(new StreamContent(stream), "file", Path.GetFileName(filePath));
 
