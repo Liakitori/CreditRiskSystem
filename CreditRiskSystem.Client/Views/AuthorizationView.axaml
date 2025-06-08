@@ -51,8 +51,9 @@
 				        VerticalContentAlignment="Center"
 				        Margin="5"
 				        CornerRadius="5"
-				        Background="Chartreuse"
-				        Foreground="Black"
+				        Background="#4CAF50"
+				        Foreground="White"
+				        FontWeight="SemiBold"
 				        Padding="25 10"
 				        Command="{Binding LoginCommand}"/>
 				<Button Content="Зарегистрироваться"
@@ -61,8 +62,9 @@
 				        VerticalContentAlignment="Center"
 				        Margin="5"
 				        CornerRadius="5"
-				        Background="#D9D9D9"
-				        Foreground="Black"
+				        Background="#6F7580"
+				        Foreground="White"
+				        FontWeight="SemiBold"
 				        Padding="25 10"
 				        Command="{Binding RegisterCommand}"/>
 			</Grid>
