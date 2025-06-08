@@ -9,8 +9,8 @@
 	<Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="50" CornerRadius="10" BoxShadow="0 0 10 0 DarkGray">
 		<StackPanel Margin="20" Spacing="25">
 			<TextBlock Text="Авторизация" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-			<TextBox Text="{Binding Username}" Watermark="Логин" HorizontalAlignment="Stretch"/>
-			<TextBox Text="{Binding Password}" Watermark="Пароль" PasswordChar="•" HorizontalAlignment="Stretch"/>
+			<TextBox Text="{Binding Username}" CornerRadius="10" Watermark="Логин" HorizontalAlignment="Stretch"/>
+			<TextBox Text="{Binding Password}" CornerRadius="10" Watermark="Пароль" PasswordChar="•" HorizontalAlignment="Stretch"/>
 			<Grid ColumnDefinitions="Auto *" Margin="5">
 				<Button Grid.Column="0" Margin="5" Content="Войти" Background="Chartreuse" Foreground="Black" Padding="25 10" Command="{Binding LoginCommand}"/>
 				<Button Grid.Column="1" Margin="5" Content="Зарегистрироваться" Background="#D9D9D9" Foreground="Black" Padding="25 10" Command="{Binding RegisterCommand}"/>
