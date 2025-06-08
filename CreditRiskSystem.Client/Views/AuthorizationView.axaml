@@ -6,24 +6,7 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
              x:Class="CreditRiskSystem.Client.Views.AuthorizationView"
              x:DataType="vm:AuthorizationViewModel">
-	<Grid>
-        <!-- Меню "Файл" -->
-        <Menu HorizontalAlignment="Left" VerticalAlignment="Top">
-            <MenuItem Header="Файл">
-                <MenuItem Header="Импортировать Excel"   />
-                <MenuItem Header="Экспортировать в PDF"  />
-                <MenuItem Header="Экспортировать в JSON" />
-            </MenuItem>
-            <MenuItem Header="Настройки"/>
-            <MenuItem Header="История"/>
-        </Menu>
-
-        <!-- Кружок с иконкой пользователя -->
-        <Ellipse Width="40" Height="40" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,10,0" Fill="#4CAF50"/>
-        <TextBlock Text="👤" FontSize="20" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,15,15,0"/>
-
-        <!-- Основное содержимое -->
-        <Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="50" CornerRadius="10" BoxShadow="0 0 10 0 DarkGray">
+	<Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="50" CornerRadius="10" BoxShadow="0 0 10 0 DarkGray">
 		<StackPanel Margin="20" Spacing="25">
 			<StackPanel Spacing="10">
 				<TextBlock Text="Регистрация"
@@ -48,6 +31,18 @@
 					<Svg Path="/Assets/user.svg" Height="16"/>
 				</TextBox.InnerLeftContent>
 			</TextBox>
+			<TextBox Text="{Binding Username}"
+			         BorderBrush="#D9D9D9"
+			         CornerRadius="5"
+			         Height="56"
+			         VerticalContentAlignment="Center"
+			         Padding="15 0"
+			         Watermark="Почта"
+			         HorizontalAlignment="Stretch">
+				<TextBox.InnerLeftContent>
+					<Svg Path="/Assets/envelope-simple.svg" Height="16"/>
+				</TextBox.InnerLeftContent>
+			</TextBox>
 			<TextBox Text="{Binding Password}"
 			         BorderBrush="#D9D9D9"
 			         CornerRadius="5"
@@ -55,6 +50,19 @@
 			         VerticalContentAlignment="Center"
 			         Padding="15 0"
 			         Watermark="Пароль"
+			         PasswordChar="•"
+			         HorizontalAlignment="Stretch">
+				<TextBox.InnerLeftContent>
+					<Svg Path="/Assets/lock.svg" Height="16"/>
+				</TextBox.InnerLeftContent>
+			</TextBox>
+			<TextBox Text="{Binding Password}"
+			         BorderBrush="#D9D9D9"
+			         CornerRadius="5"
+			         Height="56"
+			         VerticalContentAlignment="Center"
+			         Padding="15 0"
+			         Watermark="Повторите пароль"
 			         PasswordChar="•"
 			         HorizontalAlignment="Stretch">
 				<TextBox.InnerLeftContent>
@@ -88,9 +96,4 @@
 			<TextBlock Text="{Binding ErrorMessage}" Foreground="Red"/>
 		</StackPanel>
 	</Border>
-		
-        <!-- Кнопка "Выйти" -->
-        <Button Content="Выйти" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,10"/>
-    </Grid>
-	
 </UserControl>
