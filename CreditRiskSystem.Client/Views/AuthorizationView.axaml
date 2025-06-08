@@ -12,8 +12,8 @@
 			<TextBox Text="{Binding Username}" CornerRadius="10" Watermark="Логин" HorizontalAlignment="Stretch"/>
 			<TextBox Text="{Binding Password}" CornerRadius="10" Watermark="Пароль" PasswordChar="•" HorizontalAlignment="Stretch"/>
 			<Grid ColumnDefinitions="Auto *" Margin="5">
-				<Button Grid.Column="0" Margin="5" Content="Войти" Background="Chartreuse" Foreground="Black" Padding="25 10" Command="{Binding LoginCommand}"/>
-				<Button Grid.Column="1" Margin="5" Content="Зарегистрироваться" Background="#D9D9D9" Foreground="Black" Padding="25 10" Command="{Binding RegisterCommand}"/>
+				<Button Grid.Column="0" Margin="5" Content="Войти" CornerRadius="5" Background="Chartreuse" Foreground="Black" Padding="25 10" Command="{Binding LoginCommand}"/>
+				<Button Grid.Column="1" Margin="5" Content="Зарегистрироваться" CornerRadius="5" Background="#D9D9D9" Foreground="Black" Padding="25 10" Command="{Binding RegisterCommand}"/>
 			</Grid>
 			<TextBlock Text="{Binding ErrorMessage}" Foreground="Red"/>
 		</StackPanel>
