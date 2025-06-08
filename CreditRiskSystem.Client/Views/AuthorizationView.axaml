@@ -69,7 +69,7 @@
 					        Padding="25 10"
 					        Command="{Binding RegisterCommand}"/>
 				</Grid>
-				<TextBlock Text="Забыли пароль?" FontSize="14" Foreground="LightSkyBlue"></TextBlock>
+				<TextBlock Text="Забыли пароль?" FontSize="14" Foreground="#0075FF"></TextBlock>
 			</StackPanel>
 			<TextBlock Text="{Binding ErrorMessage}" Foreground="Red"/>
 		</StackPanel>
