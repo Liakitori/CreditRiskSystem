@@ -9,11 +9,11 @@
 	<Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="50" CornerRadius="10" BoxShadow="0 0 10 0 DarkGray">
 		<StackPanel Margin="20" Spacing="25">
 			<StackPanel Spacing="10">
-				<TextBlock Text="Авторизация"
+				<TextBlock Text="Регистрация"
 				           FontSize="32"
 				           FontWeight="Bold"
 				           HorizontalAlignment="Center"/>
-				<TextBlock Text="Войдите в свой аккаунт, чтобы получить доступ к персонализированным функциям и возможностям."
+				<TextBlock Text="Создайте аккаунт, чтобы получить доступ к персонализированным функциям и возможностям."
 				           TextWrapping="Wrap" TextAlignment="Center"
 				           Width="350"
 				           FontSize="16"
@@ -51,7 +51,7 @@
 				        VerticalContentAlignment="Center"
 				        Margin="5"
 				        CornerRadius="5"
-				        Background="#4CAF50"
+				        Background="#6F7580"
 				        Foreground="White"
 				        FontWeight="SemiBold"
 				        Padding="25 10"
@@ -62,7 +62,7 @@
 				        VerticalContentAlignment="Center"
 				        Margin="5"
 				        CornerRadius="5"
-				        Background="#6F7580"
+				        Background="#4CAF50"
 				        Foreground="White"
 				        FontWeight="SemiBold"
 				        Padding="25 10"
