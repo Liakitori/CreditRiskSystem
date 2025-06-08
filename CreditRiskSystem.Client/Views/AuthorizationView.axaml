@@ -7,7 +7,7 @@
              x:Class="CreditRiskSystem.Client.Views.AuthorizationView"
              x:DataType="vm:AuthorizationViewModel">
 	<TabControl>
-		<TabItem IsSelected="{Binding #RegistrationButton.IsChecked}">
+		<TabItem x:Name="Registration">
 			<Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="50" CornerRadius="10" BoxShadow="0 0 10 0 DarkGray">
 				<StackPanel Margin="20" Spacing="25">
 					<StackPanel Spacing="10">
@@ -74,6 +74,7 @@
 					<Grid ColumnDefinitions="Auto *" Margin="-5">
 						<ToggleButton x:Name="AuthorizationButton"
 						              Content="Авторизоваться"
+						              IsChecked="{Binding #AuthorizationButton}"
 						              Grid.Column="0"
 						              Height="56"
 						              VerticalContentAlignment="Center"
@@ -100,7 +101,7 @@
 				</StackPanel>
 			</Border>
 		</TabItem>
-		<TabItem IsSelected="{Binding #AuthorizationButton.IsChecked}">
+		<TabItem x:Name="Authorization">
 			<Border HorizontalAlignment="Center" VerticalAlignment="Center" Padding="50" CornerRadius="10" BoxShadow="0 0 10 0 DarkGray">
 				<StackPanel Margin="20" Spacing="25">
 					<StackPanel Spacing="10">
@@ -154,6 +155,7 @@
 							        Command="{Binding LoginCommand}"/>
 							<ToggleButton x:Name="RegistrationButton"
 							              Content="Зарегистрироваться"
+							              IsChecked="{Binding #RegistrationButton}"
 							              Grid.Column="1"
 							              Height="56"
 							              VerticalContentAlignment="Center"
